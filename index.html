@@ -1,10 +1,15 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Floppr · climb the board, call the flop</title><meta name="theme-color" content="#3b2a6b">
-<meta name="description" content="A cosy daily movie-budget game. Guess 7 budgets, call the flops, climb the diving board and dive!">
+<meta name="description" content="A cosy daily movie-budget game. Guess 7 real budgets, call the flops, climb the ladder and dive!">
+<meta property="og:type" content="website"><meta property="og:url" content="https://optimusslimes.github.io/floppr/"><meta property="og:title" content="Floppr · the daily movie-budget dive">
+<meta property="og:description" content="Guess 7 real movie budgets, call Flop or Smash, and help Pip the hippo climb the ladder for a big dive.">
+<meta property="og:image" content="https://optimusslimes.github.io/floppr/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Floppr · the daily movie-budget dive"><meta name="twitter:description" content="Guess 7 real movie budgets, call Flop or Smash, and help Pip dive."><meta name="twitter:image" content="https://optimusslimes.github.io/floppr/og.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="icon" href="favicon.ico" sizes="32x32"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css"></head><body>
 <div id="scene" aria-hidden="true">
- <div id="sky"></div><div id="stars" class="st1"></div><div id="stars2" class="st2"></div>
+ <div id="sky"></div><div id="starWrap"><div class="st1"></div></div><div id="starWrap2"><div class="st2"></div></div>
  <div id="moon"></div><div id="planet"><i></i></div><div id="sun"></div>
  <div class="layer" id="hiClouds" data-f="0.75"><div class="cl" style="--y:62;--x:8%;--s:1.3"></div><div class="cl" style="--y:70;--x:58%;--s:1"></div><div class="cl" style="--y:80;--x:30%;--s:1.6"></div><div class="cl" style="--y:92;--x:75%;--s:1.2"></div><div class="cl" style="--y:98;--x:-4%;--s:1.8"></div><div class="cl" style="--y:104;--x:40%;--s:2"></div></div>
  <div class="layer" id="farHills" data-f="0.12"><svg viewBox="0 0 1600 300" preserveAspectRatio="none"><path d="M0 220 Q150 120 320 190 T640 170 T980 150 T1300 185 T1600 140 V300 H0Z" fill="#7a5fa8"/><path d="M0 250 Q200 190 420 235 T860 220 T1250 240 T1600 210 V300 H0Z" fill="#6a4f98"/></svg></div>
@@ -18,7 +23,7 @@
   <g fill="#3a2d63"><rect x="800" y="160" width="10" height="180"/><rect x="880" y="160" width="10" height="180"/><ellipse cx="845" cy="130" rx="70" ry="48"/><text x="845" y="140" font-family="Fredoka" font-size="26" fill="#ff9ec0" text-anchor="middle" font-weight="700">FLOPPR</text></g></svg></div>
  <div class="layer" id="world" data-f="1">
   <div id="ground"></div><div id="pool"><div class="wave"></div><div class="wave w2"></div></div>
-  <div id="ladder"></div><div id="marks"></div><div id="plat"><i></i></div>
+  <div id="ladder"><div id="ladTop"></div></div><div id="marks"></div><svg id="board" viewBox="0 0 160 60" width="160" height="60"><path id="boardPath" d="M4 30 L150 30" stroke="#2d2350" stroke-width="16" stroke-linecap="round" fill="none"/><path id="boardFill" d="M4 30 L150 30" stroke="#ff9ec0" stroke-width="8" stroke-linecap="round" fill="none"/><rect x="0" y="22" width="14" height="40" rx="4" fill="#f2b880" stroke="#2d2350" stroke-width="4"/></svg>
   <div id="pipWrap"><div id="pipSq"><svg id="pip" viewBox="0 0 200 200">
    <defs><linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c7b5f2"/><stop offset="1" stop-color="#a691e0"/></linearGradient></defs>
    <g stroke="#2d2350" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
@@ -54,29 +59,29 @@
   <div class="inputRow"><input id="amt" type="text" inputmode="text" enterkeyhint="done" placeholder="e.g. 120M, 4.5m, 400k" autocomplete="off" autocapitalize="off" spellcheck="false"><button id="lock" class="btn">Lock</button></div>
   <div id="preview" class="preview">&nbsp;</div>
   <input type="range" id="slider" min="0" max="1000" value="600" aria-label="Budget slider">
-  <div class="sliderLbls"><span>$100K</span><span>$3M</span><span>$100M</span><span>$500M</span></div>
+  <div class="sliderLbls" id="sliderLbls"></div>
   <div class="q">…then call it <small>(keys 1–4)</small></div>
   <div class="verdicts" id="calls">
    <button data-v="0" class="v v0">💦<b>Flop</b><small>&lt;1× back</small></button><button data-v="1" class="v v1">😐<b>Even</b><small>1–2.5×</small></button>
-   <button data-v="2" class="v v2">🎉<b>Hit</b><small>2.5–6×</small></button><button data-v="3" class="v v3">🚀<b>Smash</b><small>6×+</small></button></div>
+   <button data-v="2" class="v v2">🎉<b>Hit</b><small>2.5–8×</small></button><button data-v="3" class="v v3">🚀<b>Smash</b><small>8×+</small></button></div>
  </section>
- <section id="reveal" class="sec" hidden>
+ <section id="reveal" class="sec" hidden aria-live="polite">
   <h2 id="rTitle"></h2><div id="rHead" class="rhead"></div>
-  <div class="facts"><div><small>Your guess</small><b id="rGuess"></b></div><div><small>Real budget</small><b id="rBudget"></b></div><div><small>Worldwide</small><b id="rGross"></b></div></div>
+  <div class="facts"><div><small>Your guess</small><b id="rGuess"></b><em id="rOff"></em></div><div class="hero"><small>Real budget</small><b id="rBudget"></b><em id="rRange"></em></div><div><small>Worldwide</small><b id="rGross"></b><em id="rMult"></em></div></div>
   <div class="meter"><div class="mtrack"><span>Flop</span><span>Even</span><span>Hit</span><span>Smash</span></div><div id="needle"></div></div>
   <div id="rCall" class="rcall"></div><p class="fine" id="rSrc"></p>
   <button id="next" class="btn big">Next film →</button>
  </section>
  <section id="end" class="sec" hidden>
   <h2 id="eHead"></h2><div id="eSub" class="rhead"></div>
-  <table id="recap"><thead><tr><th>Film</th><th>Guess</th><th>Real</th><th>Gross</th><th>Call</th><th>+m</th></tr></thead><tbody></tbody></table>
+  <div class="row"><button id="copy" class="btn">Share result</button><button id="practice" class="btn alt">Practice</button><button id="archBtn" class="btn alt">Archive</button></div>
   <pre id="share"></pre>
-  <div class="row"><button id="copy" class="btn">Copy result</button><button id="practice" class="btn alt">Practice climb</button><button id="archBtn" class="btn alt">Archive</button></div>
+  <table id="recap"><thead><tr><th>Film</th><th>Guess</th><th>Real</th><th>Gross</th><th>Call</th><th>+m</th></tr></thead><tbody></tbody></table>
   <p class="fine" id="best"></p>
  </section>
 </main>
 <dialog id="help"><h3>How to play 🦛</h3><p>Every day: <b>7 real films</b>. Guess each one's <b>production budget</b> once, then call how it did worldwide: <b>Flop / Even / Hit / Smash</b>.</p>
-<p>🪜 Closer guess = bigger climb: within 10% <b>+11m</b> · 25% +8m · 50% +5m · 2× +3m · 3× 0 · worse: slip −3m.</p><p>📣 Right call = <b>+3m</b>. Wrong call = Pip wobbles.</p>
+<p>🪜 The closer your guess, the higher Pip climbs. Inside the reported budget range (or within 10%) is a <b>bullseye: +11m</b>. Way off and Pip slips.</p><p>📣 Right call = <b>+3m</b>. Wrong call = Pip wobbles.</p>
 <p>After film 7 Pip dives from the top! Height is your score; more right calls = a prettier dive (swan 🦢 · cannonball 💣 · belly flop 💦).</p><button class="btn" id="helpClose">Let's climb</button></dialog>
 <dialog id="arch"><h3>Archive</h3><div id="archList"></div><button class="btn" id="archClose">Close</button></dialog>
 <script src="data.js"></script><script src="audio.js"></script><script src="game.js"></script></body></html>

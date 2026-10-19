@@ -41,4 +41,19 @@ const sfx={
  smack(){if(!ctx)return;noise(now(),.25,.9,sfxBus,-900);tone(now(),120,.25,'sine',.5,sfxBus,.001)},
  sparkle(){if(!ctx)return;for(let k=0;k<10;k++)tone(now()+k*.05,mtof(84+[0,2,4,7,9][k%5]+(k>4?12:0)),.4,'sine',.1,sfxBus,.002)},
  click(){if(!ctx)return;tone(now(),900,.04,'square',.05,sfxBus,.001,3000)}};
-return{init,sfx,setLevel:h=>level=h,get muted(){return muted},toggle(){muted=!muted;localStorage.flopprMute=muted?'1':'0';if(master)master.gain.setTargetAtTime(muted?0:.9,ctx.currentTime,.05);return muted},resume(){if(ctx&&ctx.state==='suspended')ctx.resume()}}})();
+
+// ---- v2 additions: cascade/stamp/updraft/band chime/wind (music untouched) ----
+Object.assign(sfx,{
+ stamp(t=0){if(!ctx)return;tone(now(),[90,110,130,150,170,190][t]||120,.22,'sine',.5,sfxBus,.001);noise(now(),.08,.3,sfxBus,-1200)},
+ tick(i=0){if(!ctx)return;tone(now(),mtof(72+i),.06,'triangle',.12,sfxBus,.002)},
+ up(){if(!ctx)return;[0,4,7].forEach((s,k)=>tone(now()+k*.05,mtof(67+s+k*0),.35,'triangle',.13,sfxBus,.005))},
+ down(){if(!ctx)return;const o=tone(now(),520,.45,'triangle',.12,sfxBus,.01);o.frequency.exponentialRampToValueAtTime(220,now()+.45)},
+ chime(b=0){if(!ctx)return;const iv=[4,5,7,9,12,7,5,12][b]||7;[0,iv].forEach((s,k)=>tone(now()+k*.12,mtof(79+s),.9,'sine',.16,sfxBus,.004))},
+ drum(ms=500){if(!ctx)return;const n=Math.floor(ms/45);for(let k=0;k<n;k++)noise(now()+k*.045,.04,.08+.1*k/n,sfxBus,2500)},
+ cheer(){if(!ctx)return;noise(now(),1.4,.18,sfxBus,800);for(let k=0;k<8;k++)tone(now()+Math.random()*.6,500+Math.random()*500,.25,'sawtooth',.02,sfxBus,.05,1500)}});
+let wind=null;
+function windInit(){if(!ctx||wind)return;const len=ctx.sampleRate*3,b=ctx.createBuffer(1,len,ctx.sampleRate),a=b.getChannelData(0);let b0=0,b1=0,b2=0;
+ for(let i=0;i<len;i++){const w=Math.random()*2-1;b0=.99765*b0+w*.099;b1=.963*b1+w*.2965;b2=.57*b2+w*1.0526;a[i]=(b0+b1+b2+w*.1848)*.18}
+ const s=ctx.createBufferSource();s.buffer=b;s.loop=true;const f=ctx.createBiquadFilter();f.type='bandpass';f.Q.value=.8;f.frequency.value=400;const g=ctx.createGain();g.gain.value=0;s.connect(f);f.connect(g);g.connect(sfxBus);s.start();wind={f,g}}
+function setWind(level,env){if(!ctx)return;windInit();const t=ctx.currentTime;wind.f.frequency.setTargetAtTime(400+200*level+300*env,t,.15);wind.g.gain.setTargetAtTime(level?.03*level*(1+env):0,t,.12)}
+return{init,sfx,setWind,setLevel:h=>level=h,get muted(){return muted},toggle(){muted=!muted;localStorage.flopprMute=muted?'1':'0';if(master)master.gain.setTargetAtTime(muted?0:.9,ctx.currentTime,.05);return muted},resume(){if(ctx&&ctx.state==='suspended')ctx.resume()}}})();

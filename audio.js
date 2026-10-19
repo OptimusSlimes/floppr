@@ -1,5 +1,5 @@
 // Floppr audio: 100% procedural Web Audio (original, no samples). Starts only after a user gesture.
-window.FlopAudio=(()=>{let ctx=null,master,music,sfxBus,muted=localStorage.flopprMute==='1',level=0,timer=null,step=0,nextT=0;
+window.FlopAudio=(()=>{let ctx=null,master,music,sfxBus,muted=(()=>{try{return localStorage.flopprMute==='1'}catch(e){return false}})(),zone=0,amb=null,level=0,timer=null,step=0,nextT=0;
 const BPM=88,S=60/BPM/2;// eighth notes
 // I–vi–IV–V-ish cosy progression in F: Fmaj7, Dm7, Bbmaj7, C6  (midi roots)
 const CH=[[53,57,60,64],[50,53,57,60],[46,50,53,57],[48,52,55,57]],SCALE=[65,67,69,72,74,77,79,81,84];
@@ -17,7 +17,16 @@ function tone(t,f,dur,type,vol,dest,att=.01,cut=0){const o=ctx.createOscillator(
  if(cut){const f2=ctx.createBiquadFilter();f2.frequency.value=cut;o.connect(f2);f2.connect(g)}else o.connect(g);g.connect(dest);o.start(t);o.stop(t+dur+.05);return o}
 function noise(t,dur,vol,dest,hp=6000){const b=ctx.createBuffer(1,ctx.sampleRate*dur,ctx.sampleRate),a=b.getChannelData(0);for(let i=0;i<a.length;i++)a[i]=Math.random()*2-1;
  const s=ctx.createBufferSource();s.buffer=b;const f=ctx.createBiquadFilter();f.type=hp>0?'highpass':'lowpass';f.frequency.value=Math.abs(hp);const g=ctx.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);s.connect(f);f.connect(g);g.connect(dest);s.start(t)}
-function sched(){while(nextT<ctx.currentTime+.25){play(step,nextT);nextT+=S;step=(step+1)%64}}
+function sched(){while(nextT<ctx.currentTime+.25){play(step,nextT);if(!muted)ambTick(step,nextT);nextT+=S;step=(step+1)%64}}
+// v4 per-zone ambience: sparse procedural one-shots on their own quiet bus (all synthesised here, no samples)
+function ambBus(){if(!amb){amb=ctx.createGain();amb.gain.value=.5;amb.connect(sfxBus)}return amb}
+function ambTick(i,t){const r=Math.random(),A=ambBus();
+ if(zone===0){if(r<.22)[0,.06].forEach(d=>tone(t+d,4300+Math.random()*200,.035,'sine',.018,A,.003))}// crickets by the pool
+ else if(zone===1){if(r<.05){tone(t,430,.22,'sine',.03,A,.04);tone(t+.26,385,.3,'sine',.03,A,.04)}}// rooftop pigeon coo
+ else if(zone===2){if(r<.07)for(let k=0;k<3;k++){const o=tone(t+k*.09,2600,.07,'sine',.02,A,.005);o.frequency.exponentialRampToValueAtTime(3600,t+k*.09+.07)}}// birds
+ else if(zone===3){if(r<.03)noise(t,1.8,.035,A,-320)}// distant jet rumble
+ else if(zone<=5){if(r<.05)tone(t,mtof(SCALE[Math.floor(Math.random()*SCALE.length)]+12),1.6,'sine',.014,A,.4)}// thin-air glass
+ else{if(r<.035){tone(t,1320,1.4,'sine',.02,A,.003);tone(t+.5,1320,1.2,'sine',.008,A,.003)}}}// space sonar
 function play(i,t){const bar=Math.floor(i/16)%4,c=CH[bar],e=i%16;
  // layer 1 (always): soft electric-piano chord stabs on 1 and the "and" of 2
  if(e===0||e===6||e===10)c.forEach((m,k)=>tone(t+k*.012,mtof(m),S*3.2,'triangle',.05,music,.02));
@@ -48,6 +57,14 @@ Object.assign(sfx,{
  tick(i=0){if(!ctx)return;tone(now(),mtof(72+i),.06,'triangle',.12,sfxBus,.002)},
  up(){if(!ctx)return;[0,4,7].forEach((s,k)=>tone(now()+k*.05,mtof(67+s+k*0),.35,'triangle',.13,sfxBus,.005))},
  down(){if(!ctx)return;const o=tone(now(),520,.45,'triangle',.12,sfxBus,.01);o.frequency.exponentialRampToValueAtTime(220,now()+.45)},
+ landmark(k=0){if(!ctx)return;const n=SCALE[k%SCALE.length]+12*Math.floor(k/SCALE.length);tone(now(),mtof(Math.min(n,108)),.5,'triangle',.07,sfxBus,.003);tone(now()+.07,mtof(Math.min(n+7,115)),.4,'sine',.04,sfxBus,.003)},
+ dive(kind){if(!ctx)return;const t=now();
+  if(kind==='belly'){tone(t,90,.25,'sine',.25,sfxBus,.002)}
+  else if(kind==='cannon'){const o=tone(t,140,.6,'sine',.32,sfxBus,.003);o.frequency.exponentialRampToValueAtTime(45,t+.6);noise(t+.05,.9,.12,sfxBus,-900)}
+  else if(kind==='flip'){noise(t+.12,.35,.1,sfxBus,1800);tone(t+.1,660,.12,'triangle',.06,sfxBus)}
+  else if(kind==='hero'){[0,4,7,12].forEach((s,k)=>tone(t+.05+k*.08,mtof(72+s),.5,'square',.04,sfxBus,.005,2400))}
+  else if(kind==='star'){for(let k=0;k<8;k++)tone(t+k*.05,mtof(84+[0,2,4,7,9,12,14,16][k]),.6,'sine',.04,sfxBus,.003)}
+  else if(kind==='reentry'){const o=tone(t,70,1.4,'sawtooth',.14,sfxBus,.01,600);o.frequency.exponentialRampToValueAtTime(30,t+1.4);noise(t,1.2,.1,sfxBus,3000);noise(t+.1,1.6,.16,sfxBus,-500)}},
  chime(b=0){if(!ctx)return;const iv=[4,5,7,9,12,7,5,12][b]||7;[0,iv].forEach((s,k)=>tone(now()+k*.12,mtof(79+s),.9,'sine',.16,sfxBus,.004))},
  drum(ms=500){if(!ctx)return;const n=Math.floor(ms/45);for(let k=0;k<n;k++)noise(now()+k*.045,.04,.08+.1*k/n,sfxBus,2500)},
  cheer(){if(!ctx)return;noise(now(),1.4,.18,sfxBus,800);for(let k=0;k<8;k++)tone(now()+Math.random()*.6,500+Math.random()*500,.25,'sawtooth',.02,sfxBus,.05,1500)}});
@@ -56,4 +73,4 @@ function windInit(){if(!ctx||wind)return;const len=ctx.sampleRate*3,b=ctx.create
  for(let i=0;i<len;i++){const w=Math.random()*2-1;b0=.99765*b0+w*.099;b1=.963*b1+w*.2965;b2=.57*b2+w*1.0526;a[i]=(b0+b1+b2+w*.1848)*.18}
  const s=ctx.createBufferSource();s.buffer=b;s.loop=true;const f=ctx.createBiquadFilter();f.type='bandpass';f.Q.value=.8;f.frequency.value=400;const g=ctx.createGain();g.gain.value=0;s.connect(f);f.connect(g);g.connect(sfxBus);s.start();wind={f,g}}
 function setWind(level,env){if(!ctx)return;windInit();const t=ctx.currentTime;wind.f.frequency.setTargetAtTime(400+200*level+300*env,t,.15);wind.g.gain.setTargetAtTime(level?.03*level*(1+env):0,t,.12)}
-return{init,sfx,setWind,setLevel:h=>level=h,get muted(){return muted},toggle(){muted=!muted;localStorage.flopprMute=muted?'1':'0';if(master)master.gain.setTargetAtTime(muted?0:.9,ctx.currentTime,.05);return muted},resume(){if(ctx&&ctx.state==='suspended')ctx.resume()}}})();
+return{init,sfx,setWind,setLevel:h=>level=h,get muted(){return muted},setZone(z){zone=z|0},toggle(){muted=!muted;try{localStorage.flopprMute=muted?'1':'0'}catch(e){}if(master)master.gain.setTargetAtTime(muted?0:.9,ctx.currentTime,.05);return muted},resume(){if(ctx&&ctx.state==='suspended')ctx.resume()}}})();

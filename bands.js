@@ -1,4 +1,4 @@
-// Floppr v2: 8 altitude bands. Data + cosy outlined SVG props (ink #2d2350, 3-4px strokes).
+// Floppr v2/v3: 8 altitude bands. Data + cosy outlined SVG props (ink #2d2350, 3-4px strokes).
 window.FlopBands=(()=>{
 const K='#2d2350',S=`stroke="${K}" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"`;
 const BANDS=[
@@ -10,7 +10,8 @@ const BANDS=[
  {n:'Stratosphere',lo:15000,hi:50000,sky:['#2b1f6b','#1d3a8a'],wind:3,mat:'rope',post:'Edge of the blue',icon:'🌐',e:'🌐'},
  {n:'Mesosphere',lo:50000,hi:100000,sky:['#0b0818','#2a1650'],wind:1,mat:'star',post:'Shooting-star zone',icon:'☄️',e:'☄️'},
  {n:'Space!',lo:100000,hi:200000,sky:['#020208','#0a0a22'],wind:0,mat:'star',post:'Astro-hippo',icon:'🚀',e:'🚀'}];
-const MILES=[[40,'🗼 Water tower'],[330,'🗼 Eiffel Tower'],[828,'🏙️ Burj Khalifa'],[8849,'🏔️ Everest'],[11000,'✈️ Airliners'],[18000,'🛩️ Concorde'],[41000,'🪂 Record skydive'],[100000,'🚀 Kármán line']];
+// v3: real landmarks (landmarks.js, each with a Wikipedia source)
+const MILES=(window.LANDMARKS||[]).map(l=>[l.h,l.e+' '+l.n]);
 const bandOf=h=>{let i=0;while(i<7&&h>=BANDS[i+1].lo)i++;return i};
 // world px of an altitude (log within each band, linear in band 1)
 function Y(h,BP){if(h<=0)return 0;const i=bandOf(h),b=BANDS[i];const f=i===0?h/b.hi:Math.log(h/b.lo)/Math.log(b.hi/b.lo);return BP*(i+f)}

@@ -55,49 +55,48 @@
 </div>
 <div id="bandCard" aria-live="polite"><small>New altitude</small><b></b><em></em></div>
 <div id="toast" aria-live="polite"></div>
+<div id="lmPop" aria-live="polite"></div><div id="gainPop" aria-hidden="true"></div><div id="diveName" aria-hidden="true"></div><div id="judges" aria-live="polite"></div>
 <div id="hud"><div class="logo">Fl<span>o</span>ppr</div><div class="hudR"><button id="hudHelp" class="ghost hudBtn" aria-label="How to play" style="display:none">?</button><button id="mute" class="ghost hudBtn" aria-label="Toggle sound">🔊</button><div id="height"><b id="hm">0 m</b><small id="hband">Studio Lot</small></div><div id="updraft" title="Updraft multiplier">⚡×1</div></div></div>
 <main id="panel" class="card">
  <div id="coach" hidden><span id="coachTxt"></span><button id="coachSkip" class="linkBtn">Skip rehearsal</button></div>
  <div class="top"><div id="kicker"></div><div class="tools"><span id="streak"></span><button id="helpBtn" class="ghost" aria-label="How to play">?</button></div></div>
- <div id="dots"></div>
+ <div class="filmRow"><h2 id="title"></h2><div id="dots" aria-hidden="true"></div></div>
  <section id="play" class="sec">
-  <div class="film"><div class="clap">🎬</div><div><h2 id="title"></h2><div class="meta" id="meta"></div></div></div>
-  <div class="q q1"><span class="stepN">1</span> Which shelf? <small>(keys 1–6)</small></div>
-  <div id="shelves" role="radiogroup" aria-label="Budget shelf"></div>
-  <div class="q fineQ"><span class="stepN">2</span> Fine-tune · <b id="gval">pick a shelf</b><input id="amt" type="text" inputmode="text" enterkeyhint="done" placeholder="or type 120M" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a budget"></div>
-  <div class="sliderBox"><input type="range" id="slider" min="0" max="1000" value="500" aria-label="Fine-tune budget" disabled><div id="pins"></div></div>
-  <div class="sliderLbls" id="sliderLbls"></div>
-  <div class="prodRow"><button id="prod" class="pill">🎬 Ask the Producer · <span id="prodLeft">1</span> left</button><span id="prodHint"></span></div>
-  <div class="q q3"><span class="stepN">3</span> Call it <small>(Q W E R)</small></div>
-  <div class="verdicts" id="calls">
-   <button data-v="0" class="v v0" disabled>💦<b>Flop</b><small>&lt;1× back</small></button><button data-v="1" class="v v1" disabled>😐<b>Even</b><small>1–2.5×</small></button>
-   <button data-v="2" class="v v2" disabled>🎉<b>Hit</b><small>2.5–8×</small></button><button data-v="3" class="v v3" disabled>🚀<b>Smash</b><small>8×+</small></button></div>
+  <div class="meta"><span id="meta"></span><span id="hint" aria-live="polite"></span></div>
+  <div id="shelves" role="radiogroup" aria-label="Budget shelf (keys 1 to 6)"></div>
+  <div class="tune"><input type="range" id="slider" min="0" max="1000" value="500" aria-label="Fine-tune budget" disabled><b id="gval" aria-live="polite">–</b><input id="amt" type="text" inputmode="text" enterkeyhint="done" placeholder="type it" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a budget"><button id="prod" class="prodBtn" aria-label="Ask the Producer for a higher or lower hint (once a day)" title="Ask the Producer: higher or lower? (once a day, caps that climb at 2 km)">🎬<i id="prodLeft">1</i></button></div>
+  <div class="verdicts" id="calls" role="group" aria-label="Call it (keys Q W E R)">
+   <button data-v="0" class="v v0" disabled><span>💦 <b>Flop</b></span><small>&lt;1× back</small></button><button data-v="1" class="v v1" disabled><span>😐 <b>Even</b></span><small>1–2.5×</small></button><button data-v="2" class="v v2" disabled><span>🎉 <b>Hit</b></span><small>2.5–8×</small></button><button data-v="3" class="v v3" disabled><span>🚀 <b>Smash</b></span><small>8×+</small></button></div>
  </section>
  <section id="reveal" class="sec" hidden aria-live="polite">
-  <h2 id="rTitle"></h2><div id="rHead" class="rhead"></div>
-  <div class="facts"><div><small>Your guess</small><b id="rGuess"></b><em id="rOff"></em></div><div class="hero"><small>Real budget</small><b id="rBudget"></b><em id="rRange"></em></div><div><small>Worldwide</small><b id="rGross"></b><em id="rMult"></em></div></div>
-  <div id="cascade"><div class="cc"><small>Climb</small><b id="cClimb">0 m</b><em id="cNote"></em></div><div class="cx">×</div><div class="cc"><small>Updraft</small><b id="cMult">⚡×1</b><em id="cHead"></em></div><div class="cTot"><b id="cGain">+0 m</b></div></div>
+  <div id="rHead" class="rhead"></div>
+  <div class="facts"><div><small>You</small><b id="rGuess"></b><em id="rOff"></em></div><div class="hero"><small>Real budget</small><b id="rBudget"></b><em id="rRange"></em></div><div><small>Worldwide</small><b id="rGross"></b><em id="rMult"></em></div><div class="gain"><small>Climb</small><b id="cGain">+0 m</b><em id="cMath"></em></div></div>
   <div id="rCall" class="rcall"></div>
-  <div id="nextBand"><div><i id="nbFill"></i></div><span id="nbTxt"></span></div>
-  <p class="fine" id="rSrc"></p>
-  <button id="next" class="btn big">Next film →</button>
+  <div class="nextRow"><button id="next" class="btn big">Next film →</button><button id="moreBtn" class="ghost moreBtn" aria-expanded="false" aria-controls="rMore" aria-label="Details">ⓘ</button></div>
+  <div id="rMore" hidden><div id="nextBand"><div><i id="nbFill"></i></div><span id="nbTxt"></span></div><p id="rPassed" class="fine"></p><p class="fine" id="rSrc"></p></div>
  </section>
  <section id="end" class="sec" hidden>
-  <div id="postWrap"><img id="postImg" alt="Your Floppr postcard"></div>
-  <div id="eRows"></div><div id="eSub" class="fine"></div>
-  <div class="row"><button id="sharePost" class="btn">Share postcard</button><button id="challenge" class="btn alt">Challenge</button></div>
-  <pre id="share"></pre>
-  <div class="box" id="streakBox"></div>
-  <div class="box"><b>Your altitude album</b><div id="album"></div><small id="albumNote"></small></div>
-  <details><summary>Today's films</summary><table id="recap"><thead><tr><th>Film</th><th>Guess</th><th>Real</th><th>Call</th><th>+m</th></tr></thead><tbody></tbody></table><p class="fine" id="compSrc"></p></details>
-  <div class="row"><button id="practice" class="btn alt">Practice</button><button id="archBtn" class="btn alt">Archive</button><button id="albumBtn" class="btn alt">Album</button></div>
-  <p class="fine" id="best"></p>
+  <div class="eTop"><div><b id="eAlt"></b><small id="eBand"></small></div><div id="eDive"></div></div>
+  <div id="eLand"></div>
+  <div id="eRows"></div>
+  <div class="row eBtns"><button id="sharePost" class="btn">Share</button><button id="challenge" class="btn alt">Challenge</button><button id="endMore" class="btn alt" aria-expanded="false">More ▴</button></div>
+  <div id="eMoreBox" hidden>
+   <div id="eSub" class="fine"></div>
+   <div id="postWrap"><img id="postImg" alt="Your Floppr postcard"></div>
+   <pre id="share"></pre>
+   <div class="box" id="streakBox"></div>
+   <div class="box"><b>Your altitude album</b><div id="album"></div><small id="albumNote"></small></div>
+   <details><summary>Today's films</summary><table id="recap"><thead><tr><th>Film</th><th>Guess</th><th>Real</th><th>Call</th><th>+m</th></tr></thead><tbody></tbody></table><p class="fine" id="compSrc"></p></details>
+   <div class="row"><button id="practice" class="btn alt">Practice</button><button id="archBtn" class="btn alt">Archive</button><button id="albumBtn" class="btn alt">Album</button></div>
+   <p class="fine" id="best"></p>
+  </div>
  </section>
 </main>
-<dialog id="help"><h3>How to play 🦛</h3><p>Every day: <b>7 real films</b>. For each: pick a <b>budget shelf</b>, fine-tune with the slider (comparable films are pinned to help), then call how it did worldwide: <b>Flop / Even / Hit / Smash</b>. Calling locks it in.</p>
+<dialog id="help"><h3>How to play 🦛</h3><p>Every day: <b>7 real films</b>. For each: tap a <b>budget shelf</b>, slide to fine-tune (or type it), then call how it did worldwide: <b>Flop / Even / Hit / Smash</b>. Calling locks it in.</p>
 <p>🪜 Every guess climbs: <b>3 km</b> for a bullseye (inside the range or within 10%), down to 150 m for a wild one. Right shelf = at least 700 m.</p>
 <p>⚡ <b>Updraft</b>: each right call raises your multiplier (×1.5, ×2, ×3, ×4, ×6) before it applies; a wrong call drops it one step. Film 7 is the <b>Headliner</b>: call it right for ×2.</p>
-<p>🎬 Once a day you can Ask the Producer for a higher/lower hint (that film's climb caps at 2 km). After film 7 Pip dives from the top!</p><button class="btn" id="helpClose">Let's climb</button></dialog>
+<p>🏙️ Pip passes real landmarks on the way up. The higher he gets, the fancier the final dive: belly flop, cannonball, front flip, superhero, starfish twister… and something special from space.</p>
+<p>🎬 Once a day the Producer will tell you higher or lower (that film's climb caps at 2 km).</p><button class="btn" id="helpClose">Let's climb</button></dialog>
 <dialog id="arch"><h3>Archive</h3><div id="archList"></div><button class="btn" id="archClose">Close</button></dialog>
 <dialog id="albumDlg"><h3>Altitude album</h3><div id="albumBig"></div><button class="btn" id="albumClose">Close</button></dialog>
-<script src="data.js"></script><script src="comps.js"></script><script src="bands.js"></script><script src="fx.js"></script><script src="audio.js"></script><script src="game.js"></script></body></html>
+<script src="data.js"></script><script src="landmarks.js"></script><script src="bands.js"></script><script src="fx.js"></script><script src="audio.js"></script><script src="game.js"></script></body></html>

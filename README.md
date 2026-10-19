@@ -9,7 +9,8 @@ Play: https://optimusslimes.github.io/floppr/
 
 ## v2 (Big Update)
 - Score is altitude: every guess climbs 150 m–3 km, ⚡ Updraft multiplier (×1→×6) from calls, Headliner ×2 on film 7 (with a right call). Perfect day 103.5 km.
-- Shelf → fine-tune guide with 3 real comparable films (comps.js, Wikipedia-sourced), Ask the Producer lifeline (1/day).
+- Compact card (v3): one-row shelf strip → fine-tune slider (or type it) → one-row Flop/Even/Hit/Smash call; Ask the Producer lifeline (1/day). The card slides away during every climb and the dive.
+- v3: 6 dives chosen by final altitude (Belly Flop → Cannonball → Front Flip → Superhero → Starfish Twister → Re-entry Triple) with freeze-frames and judges' cards; 37 real-world landmarks (landmarks.js, each with a Wikipedia source) pop up as Pip passes them.
 - 8 altitude bands (Studio Lot → Space) with props, ladder materials, title cards and a postcard album.
 - Game feel: trauma camera shake + hit-stop (scene layer only), wind gusts above 800 m, descent montage, canvas FX layer.
 - Postcard PNG share, `?vs=<day>.<metres>` challenge flag, streak freezes, rehearsal round, reduced-motion support.

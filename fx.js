@@ -1,4 +1,4 @@
-// Floppr v2: single canvas FX layer (no DOM particles) + trauma shake helpers.
+// Floppr v2/v3: single canvas FX layer (no DOM particles) + trauma shake helpers.
 window.FlopFX=(()=>{
 let cv,cx,W=0,H=0,dpr=1;const P=[];const C=['#ff7aa2','#ffd36e','#8fe3c8','#a9d8f5','#c7b5f2'];
 function init(el){cv=el;cx=cv.getContext('2d');resize()}
@@ -13,6 +13,7 @@ const api={
  streak(n,dir=1,yMax){for(let i=0;i<n;i++){const y=R(60,yMax||H*.7);add({k:'streak',x:dir>0?R(-200,W*.3):R(W*.7,W+200),y,vx:dir*R(700,1100),life:R(.5,.9),s:R(40,110)})}},
  speed(n){for(let i=0;i<n;i++)add({k:'speed',x:R(0,W),y:R(-40,H*.4),vy:R(900,1500),life:.5,s:R(50,120)})},
  meteor(){add({k:'meteor',x:R(W*.2,W),y:R(0,H*.4),vx:-R(500,800),vy:R(250,400),life:R(.7,1.1),s:R(60,120)})},
+ ember(x,y,n=2){for(let i=0;i<n;i++)add({k:'ember',x:x+R(-14,14),y:y+R(-10,10),vx:R(-40,40),vy:R(-160,-60),life:R(.35,.7),s:R(4,9),c:Math.random()<.5?'#ffb34d':'#ff6a3d'})},
  snow(n){for(let i=0;i<n;i++)add({k:'snow',x:R(0,W),y:R(-20,H*.5),vx:R(-30,30),vy:R(40,90),life:R(2,3.5),s:R(2,4)})},
  count:()=>P.length,clear:()=>P.length=0,resize,init};
 function step(dt){if(!cx)return;cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,0,W,H);
@@ -24,6 +25,7 @@ function step(dt){if(!cx)return;cx.setTransform(dpr,0,0,dpr,0,0);cx.clearRect(0,
   case'drop':cx.fillStyle='#9fe8fa';cx.strokeStyle='#2d2350';cx.lineWidth=2;cx.beginPath();cx.arc(p.x,p.y,p.s,0,6.283);cx.fill();cx.stroke();break;
   case'ring':{const w=p.s*(.15+.85*Math.sqrt(u));cx.strokeStyle='#e6fbff';cx.lineWidth=4;cx.beginPath();cx.ellipse(p.x,p.y,w/2,w*.15,0,0,6.283);cx.stroke();break}
   case'streak':case'speed':case'meteor':{const vx=p.vx,vy=p.vy,m=Math.hypot(vx,vy)||1;cx.strokeStyle=p.k==='meteor'?'#ffd36e':'rgba(255,255,255,.75)';cx.lineWidth=p.k==='meteor'?4:2.5;cx.lineCap='round';cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(p.x-vx/m*p.s,p.y-vy/m*p.s);cx.stroke();break}
+  case'ember':{const s=p.s*(1-u*.6);cx.fillStyle=p.c;cx.beginPath();cx.arc(p.x,p.y,s,0,6.283);cx.fill();cx.fillStyle='#fff3c8';cx.beginPath();cx.arc(p.x,p.y,s*.4,0,6.283);cx.fill();break}
   case'snow':cx.fillStyle='#fff';cx.beginPath();cx.arc(p.x,p.y,p.s,0,6.283);cx.fill();break}}
  cx.globalAlpha=1}
 api.step=step;

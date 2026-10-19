@@ -1,0 +1,82 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Floppr · climb the board, call the flop</title><meta name="theme-color" content="#3b2a6b">
+<meta name="description" content="A cosy daily movie-budget game. Guess 7 budgets, call the flops, climb the diving board and dive!">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"></head><body>
+<div id="scene" aria-hidden="true">
+ <div id="sky"></div><div id="stars" class="st1"></div><div id="stars2" class="st2"></div>
+ <div id="moon"></div><div id="planet"><i></i></div><div id="sun"></div>
+ <div class="layer" id="hiClouds" data-f="0.75"><div class="cl" style="--y:62;--x:8%;--s:1.3"></div><div class="cl" style="--y:70;--x:58%;--s:1"></div><div class="cl" style="--y:80;--x:30%;--s:1.6"></div><div class="cl" style="--y:92;--x:75%;--s:1.2"></div><div class="cl" style="--y:98;--x:-4%;--s:1.8"></div><div class="cl" style="--y:104;--x:40%;--s:2"></div></div>
+ <div class="layer" id="farHills" data-f="0.12"><svg viewBox="0 0 1600 300" preserveAspectRatio="none"><path d="M0 220 Q150 120 320 190 T640 170 T980 150 T1300 185 T1600 140 V300 H0Z" fill="#7a5fa8"/><path d="M0 250 Q200 190 420 235 T860 220 T1250 240 T1600 210 V300 H0Z" fill="#6a4f98"/></svg></div>
+ <div class="layer" id="midClouds" data-f="0.45"><div class="cl drift" style="--y:8;--x:10%;--s:.9"></div><div class="cl drift" style="--y:22;--x:45%;--s:1.1;animation-delay:-30s"></div><div class="cl drift" style="--y:38;--x:70%;--s:1.3;animation-delay:-60s"></div><div class="cl drift" style="--y:50;--x:20%;--s:1;animation-delay:-15s"></div>
+  <svg class="birds" viewBox="0 0 80 30"><path d="M2 12 Q8 4 14 12 Q20 4 26 12"/><path d="M40 20 Q45 13 50 20 Q55 13 60 20"/><path d="M60 6 Q64 1 68 6 Q72 1 76 6"/></svg></div>
+ <div class="layer" id="lot" data-f="0.3"><svg viewBox="0 0 1600 340" preserveAspectRatio="xMidYMax slice">
+  <g id="beams"><path class="beam b1" d="M150 230 L40 -260 L170 -260Z"/><path class="beam b2" d="M1190 220 L1240 -280 L1360 -280Z"/></g>
+  <g fill="#4e3d7d"><path d="M80 340V215 Q170 160 260 215V340Z"/><rect x="330" y="250" width="70" height="90"/><rect x="560" y="230" width="120" height="110"/><path d="M1040 340V195 Q1150 125 1260 195V340Z"/><rect x="1300" y="240" width="160" height="100"/><rect x="1480" y="200" width="70" height="140"/></g>
+  <g fill="#ffd98a"><rect x="580" y="250" width="14" height="14" rx="3" class="win w1"/><rect x="610" y="250" width="14" height="14" rx="3"/><rect x="640" y="280" width="14" height="14" rx="3" class="win w2"/><rect x="1320" y="260" width="14" height="14" rx="3"/><rect x="1380" y="290" width="14" height="14" rx="3" class="win w3"/><rect x="1495" y="220" width="12" height="12" rx="3"/><rect x="1520" y="260" width="12" height="12" rx="3" class="win w1"/><rect x="345" y="270" width="12" height="12" rx="3"/></g>
+  <rect x="1085" y="200" width="130" height="34" rx="10" fill="#3a2d63"/><text x="1150" y="226" font-family="Fredoka" font-size="26" fill="#ffd98a" text-anchor="middle" font-weight="700">STAGE 7</text>
+  <g fill="#3a2d63"><rect x="800" y="160" width="10" height="180"/><rect x="880" y="160" width="10" height="180"/><ellipse cx="845" cy="130" rx="70" ry="48"/><text x="845" y="140" font-family="Fredoka" font-size="26" fill="#ff9ec0" text-anchor="middle" font-weight="700">FLOPPR</text></g></svg></div>
+ <div class="layer" id="world" data-f="1">
+  <div id="ground"></div><div id="pool"><div class="wave"></div><div class="wave w2"></div></div>
+  <div id="ladder"></div><div id="marks"></div><div id="plat"><i></i></div>
+  <div id="pipWrap"><div id="pipSq"><svg id="pip" viewBox="0 0 200 200">
+   <defs><linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c7b5f2"/><stop offset="1" stop-color="#a691e0"/></linearGradient></defs>
+   <g stroke="#2d2350" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+    <g id="legL" class="limb"><path d="M66 158 q-4 22 6 26 h22 q6 -2 2 -10 l-6 -20Z" fill="url(#gBody)"/><path d="M76 184 v-5 M84 184 v-5" stroke-width="3"/></g>
+    <g id="legR" class="limb"><path d="M134 158 q4 22 -6 26 h-22 q-6 -2 -2 -10 l6 -20Z" fill="url(#gBody)"/><path d="M124 184 v-5 M116 184 v-5" stroke-width="3"/></g>
+    <path id="bodyS" d="M100 82 C150 82 162 118 158 146 C154 172 130 180 100 180 C70 180 46 172 42 146 C38 118 50 82 100 82Z" fill="url(#gBody)"/>
+    <path d="M100 112 C126 112 136 132 134 150 C132 166 118 172 100 172 C82 172 68 166 66 150 C64 132 74 112 100 112Z" fill="#eee5ff" stroke="none"/>
+    <g id="armL" class="limb"><path d="M52 112 C36 118 30 138 38 148 C44 154 54 148 58 136Z" fill="url(#gBody)"/></g>
+    <g id="armR" class="limb"><path d="M148 112 C164 118 170 138 162 148 C156 154 146 148 142 136Z" fill="url(#gBody)"/></g>
+    <g id="head">
+     <ellipse cx="66" cy="34" rx="9" ry="10" fill="#b8a4ec"/><ellipse cx="134" cy="34" rx="9" ry="10" fill="#b8a4ec"/>
+     <path d="M100 26 C140 26 152 50 150 70 C148 96 128 104 100 104 C72 104 52 96 50 70 C48 50 60 26 100 26Z" fill="url(#gBody)"/>
+     <path d="M100 66 C130 66 140 76 140 86 C140 100 124 106 100 106 C76 106 60 100 60 86 C60 76 70 66 100 66Z" fill="#d9ccfa"/>
+     <ellipse cx="88" cy="80" rx="3.5" ry="4.5" fill="#2d2350" stroke="none"/><ellipse cx="112" cy="80" rx="3.5" ry="4.5" fill="#2d2350" stroke="none"/>
+     <g id="eyes" stroke="none"><g class="eye"><ellipse cx="80" cy="54" rx="8" ry="9.5" fill="#fff" stroke="#2d2350" stroke-width="4"/><circle id="pupL" cx="81" cy="55" r="5" fill="#2d2350"/><circle cx="83" cy="52" r="2" fill="#fff"/></g>
+      <g class="eye"><ellipse cx="120" cy="54" rx="8" ry="9.5" fill="#fff" stroke="#2d2350" stroke-width="4"/><circle id="pupR" cx="119" cy="55" r="5" fill="#2d2350"/><circle cx="121" cy="52" r="2" fill="#fff"/></g></g>
+     <path id="browL" d="M71 41 Q80 37 88 41" fill="none" stroke-width="4"/><path id="browR" d="M112 41 Q120 37 129 41" fill="none" stroke-width="4"/>
+     <ellipse cx="64" cy="70" rx="8" ry="4.5" fill="#ff9fbf" stroke="none" opacity=".8"/><ellipse cx="136" cy="70" rx="8" ry="4.5" fill="#ff9fbf" stroke="none" opacity=".8"/>
+     <path id="mouth" d="M90 94 Q100 100 110 94" fill="none" stroke-width="4"/>
+     <g id="cap"><path d="M58 34 C62 6 138 6 142 34Z" fill="#33285e"/><path d="M58 34 C80 40 120 40 142 34 L146 38 C120 46 80 46 54 38Z" fill="#241c46"/><path d="M62 27 C86 31 114 31 138 27 L139 33 C114 37 86 37 61 33Z" fill="#ff7aa2" stroke-width="3"/><circle cx="100" cy="9" r="5" fill="#ffd36e" stroke-width="3"/><path d="M119 20 l3 6 6 1 -4.5 4 1 6 -5.5 -3 -5.5 3 1 -6 -4.5 -4 6 -1Z" fill="#ffd36e" stroke-width="2"/></g>
+    </g></g></svg></div></div>
+  <div id="splash"></div>
+ </div>
+ <div id="fx"></div>
+</div>
+<div id="hud"><div class="logo">Fl<span>o</span>ppr</div><div class="hudR"><button id="mute" class="ghost hudBtn" aria-label="Toggle sound">🔊</button><div id="height"><b id="hm">0</b><small>m</small></div></div></div>
+<main id="panel" class="card">
+ <div class="top"><div id="kicker"></div><div class="tools"><span id="streak"></span><button id="helpBtn" class="ghost" aria-label="How to play">?</button></div></div>
+ <div id="dots"></div>
+ <section id="play" class="sec">
+  <div class="film"><div class="clap">🎬</div><div><h2 id="title"></h2><div class="meta" id="meta"></div></div></div>
+  <label class="q" for="amt">What did it cost to make?</label>
+  <div class="inputRow"><input id="amt" type="text" inputmode="text" enterkeyhint="done" placeholder="e.g. 120M, 4.5m, 400k" autocomplete="off" autocapitalize="off" spellcheck="false"><button id="lock" class="btn">Lock</button></div>
+  <div id="preview" class="preview">&nbsp;</div>
+  <input type="range" id="slider" min="0" max="1000" value="600" aria-label="Budget slider">
+  <div class="sliderLbls"><span>$100K</span><span>$3M</span><span>$100M</span><span>$500M</span></div>
+  <div class="q">…then call it <small>(keys 1–4)</small></div>
+  <div class="verdicts" id="calls">
+   <button data-v="0" class="v v0">💦<b>Flop</b><small>&lt;1× back</small></button><button data-v="1" class="v v1">😐<b>Even</b><small>1–2.5×</small></button>
+   <button data-v="2" class="v v2">🎉<b>Hit</b><small>2.5–6×</small></button><button data-v="3" class="v v3">🚀<b>Smash</b><small>6×+</small></button></div>
+ </section>
+ <section id="reveal" class="sec" hidden>
+  <h2 id="rTitle"></h2><div id="rHead" class="rhead"></div>
+  <div class="facts"><div><small>Your guess</small><b id="rGuess"></b></div><div><small>Real budget</small><b id="rBudget"></b></div><div><small>Worldwide</small><b id="rGross"></b></div></div>
+  <div class="meter"><div class="mtrack"><span>Flop</span><span>Even</span><span>Hit</span><span>Smash</span></div><div id="needle"></div></div>
+  <div id="rCall" class="rcall"></div><p class="fine" id="rSrc"></p>
+  <button id="next" class="btn big">Next film →</button>
+ </section>
+ <section id="end" class="sec" hidden>
+  <h2 id="eHead"></h2><div id="eSub" class="rhead"></div>
+  <table id="recap"><thead><tr><th>Film</th><th>Guess</th><th>Real</th><th>Gross</th><th>Call</th><th>+m</th></tr></thead><tbody></tbody></table>
+  <pre id="share"></pre>
+  <div class="row"><button id="copy" class="btn">Copy result</button><button id="practice" class="btn alt">Practice climb</button><button id="archBtn" class="btn alt">Archive</button></div>
+  <p class="fine" id="best"></p>
+ </section>
+</main>
+<dialog id="help"><h3>How to play 🦛</h3><p>Every day: <b>7 real films</b>. Guess each one's <b>production budget</b> once, then call how it did worldwide: <b>Flop / Even / Hit / Smash</b>.</p>
+<p>🪜 Closer guess = bigger climb: within 10% <b>+11m</b> · 25% +8m · 50% +5m · 2× +3m · 3× 0 · worse: slip −3m.</p><p>📣 Right call = <b>+3m</b>. Wrong call = Pip wobbles.</p>
+<p>After film 7 Pip dives from the top! Height is your score; more right calls = a prettier dive (swan 🦢 · cannonball 💣 · belly flop 💦).</p><button class="btn" id="helpClose">Let's climb</button></dialog>
+<dialog id="arch"><h3>Archive</h3><div id="archList"></div><button class="btn" id="archClose">Close</button></dialog>
+<script src="data.js"></script><script src="audio.js"></script><script src="game.js"></script></body></html>

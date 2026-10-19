@@ -1131,5 +1131,377 @@ window.FILMS=[
   "gross": 368700000,
   "source": "https://en.wikipedia.org/wiki/My_Big_Fat_Greek_Wedding",
   "genre": "Romantic comedy"
+ },
+ {
+  "title": "Dunkirk",
+  "year": 2017,
+  "budget": 125000000,
+  "budgetRange": [
+   100000000,
+   150000000
+  ],
+  "gross": 549900000,
+  "source": "https://en.wikipedia.org/wiki/Dunkirk_(2017_film)",
+  "genre": "War drama"
+ },
+ {
+  "title": "The Martian",
+  "year": 2015,
+  "budget": 108000000,
+  "budgetRange": null,
+  "gross": 653600000,
+  "source": "https://en.wikipedia.org/wiki/The_Martian_(film)",
+  "genre": "Sci-fi survival"
+ },
+ {
+  "title": "Gone Girl",
+  "year": 2014,
+  "budget": 61000000,
+  "budgetRange": null,
+  "gross": 370900000,
+  "source": "https://en.wikipedia.org/wiki/Gone_Girl_(film)",
+  "genre": "Psychological thriller"
+ },
+ {
+  "title": "Skyfall",
+  "year": 2012,
+  "budget": 175000000,
+  "budgetRange": [
+   150000000,
+   200000000
+  ],
+  "gross": 1109000000,
+  "source": "https://en.wikipedia.org/wiki/Skyfall",
+  "genre": "Spy action"
+ },
+ {
+  "title": "Casino Royale",
+  "year": 2006,
+  "budget": 126000000,
+  "budgetRange": [
+   102000000,
+   150000000
+  ],
+  "gross": 606000000,
+  "source": "https://en.wikipedia.org/wiki/Casino_Royale_(2006_film)",
+  "genre": "Spy action"
+ },
+ {
+  "title": "Ford v Ferrari",
+  "year": 2019,
+  "budget": 97600000,
+  "budgetRange": null,
+  "gross": 226300000,
+  "source": "https://en.wikipedia.org/wiki/Ford_v_Ferrari",
+  "genre": "Sports drama"
+ },
+ {
+  "title": "Avatar: The Way of Water",
+  "year": 2022,
+  "budget": 405000000,
+  "budgetRange": [
+   350000000,
+   460000000
+  ],
+  "gross": 2334000000,
+  "source": "https://en.wikipedia.org/wiki/Avatar:_The_Way_of_Water",
+  "genre": "Sci-fi epic"
+ },
+ {
+  "title": "WALL-E",
+  "year": 2008,
+  "budget": 180000000,
+  "budgetRange": null,
+  "gross": 532500000,
+  "source": "https://en.wikipedia.org/wiki/WALL-E",
+  "genre": "Animated sci-fi"
+ },
+ {
+  "title": "Up",
+  "year": 2009,
+  "budget": 175000000,
+  "budgetRange": null,
+  "gross": 735000000,
+  "source": "https://en.wikipedia.org/wiki/Up_(2009_film)",
+  "genre": "Animated adventure"
+ },
+ {
+  "title": "Ratatouille",
+  "year": 2007,
+  "budget": 150000000,
+  "budgetRange": null,
+  "gross": 623700000,
+  "source": "https://en.wikipedia.org/wiki/Ratatouille_(film)",
+  "genre": "Animated comedy"
+ },
+ {
+  "title": "Coco",
+  "year": 2017,
+  "budget": 200000000,
+  "budgetRange": [
+   175000000,
+   225000000
+  ],
+  "gross": 823300000,
+  "source": "https://en.wikipedia.org/wiki/Coco_(2017_film)",
+  "genre": "Animated musical fantasy"
+ },
+ {
+  "title": "The Incredibles",
+  "year": 2004,
+  "budget": 118500000,
+  "budgetRange": [
+   92000000,
+   145000000
+  ],
+  "gross": 631600000,
+  "source": "https://en.wikipedia.org/wiki/The_Incredibles",
+  "genre": "Animated superhero"
+ },
+ {
+  "title": "Mission: Impossible – Fallout",
+  "year": 2018,
+  "budget": 214000000,
+  "budgetRange": [
+   178000000,
+   250000000
+  ],
+  "gross": 791100000,
+  "source": "https://en.wikipedia.org/wiki/Mission:_Impossible_–_Fallout",
+  "genre": "Spy action"
+ },
+ {
+  "title": "John Wick",
+  "year": 2014,
+  "budget": 25000000,
+  "budgetRange": [
+   20000000,
+   30000000
+  ],
+  "gross": 86000000,
+  "source": "https://en.wikipedia.org/wiki/John_Wick_(film)",
+  "genre": "Action thriller"
+ },
+ {
+  "title": "Knives Out",
+  "year": 2019,
+  "budget": 40000000,
+  "budgetRange": null,
+  "gross": 312900000,
+  "source": "https://en.wikipedia.org/wiki/Knives_Out",
+  "genre": "Mystery comedy"
+ },
+ {
+  "title": "Edge of Tomorrow",
+  "year": 2014,
+  "budget": 178000000,
+  "budgetRange": null,
+  "gross": 381000000,
+  "source": "https://en.wikipedia.org/wiki/Edge_of_Tomorrow",
+  "genre": "Sci-fi action"
+ },
+ {
+  "title": "Pacific Rim",
+  "year": 2013,
+  "budget": 190000000,
+  "budgetRange": null,
+  "gross": 411000000,
+  "source": "https://en.wikipedia.org/wiki/Pacific_Rim_(film)",
+  "genre": "Sci-fi monster action"
+ },
+ {
+  "title": "Tomorrowland",
+  "year": 2015,
+  "budget": 185000000,
+  "budgetRange": [
+   180000000,
+   190000000
+  ],
+  "gross": 209000000,
+  "source": "https://en.wikipedia.org/wiki/Tomorrowland_(film)",
+  "genre": "Sci-fi adventure"
+ },
+ {
+  "title": "Alita: Battle Angel",
+  "year": 2019,
+  "budget": 175000000,
+  "budgetRange": [
+   150000000,
+   200000000
+  ],
+  "gross": 405000000,
+  "source": "https://en.wikipedia.org/wiki/Alita:_Battle_Angel",
+  "genre": "Cyberpunk action"
+ },
+ {
+  "title": "Ad Astra",
+  "year": 2019,
+  "budget": 90000000,
+  "budgetRange": [
+   80000000,
+   100000000
+  ],
+  "gross": 135200000,
+  "source": "https://en.wikipedia.org/wiki/Ad_Astra_(film)",
+  "genre": "Sci-fi drama"
+ },
+ {
+  "title": "Mortal Engines",
+  "year": 2018,
+  "budget": 125000000,
+  "budgetRange": [
+   100000000,
+   150000000
+  ],
+  "gross": 85500000,
+  "source": "https://en.wikipedia.org/wiki/Mortal_Engines_(film)",
+  "genre": "Post-apocalyptic adventure"
+ },
+ {
+  "title": "The Last Duel",
+  "year": 2021,
+  "budget": 100000000,
+  "budgetRange": null,
+  "gross": 30600000,
+  "source": "https://en.wikipedia.org/wiki/The_Last_Duel_(2021_film)",
+  "genre": "Historical drama"
+ },
+ {
+  "title": "The Fall Guy",
+  "year": 2024,
+  "budget": 137500000,
+  "budgetRange": [
+   125000000,
+   150000000
+  ],
+  "gross": 181000000,
+  "source": "https://en.wikipedia.org/wiki/The_Fall_Guy_(2024_film)",
+  "genre": "Action comedy"
+ },
+ {
+  "title": "Borderlands",
+  "year": 2024,
+  "budget": 115000000,
+  "budgetRange": [
+   110000000,
+   120000000
+  ],
+  "gross": 33000000,
+  "source": "https://en.wikipedia.org/wiki/Borderlands_(film)",
+  "genre": "Sci-fi action comedy"
+ },
+ {
+  "title": "Amsterdam",
+  "year": 2022,
+  "budget": 80000000,
+  "budgetRange": null,
+  "gross": 31200000,
+  "source": "https://en.wikipedia.org/wiki/Amsterdam_(2022_film)",
+  "genre": "Period mystery comedy"
+ },
+ {
+  "title": "Dungeons & Dragons: Honor Among Thieves",
+  "year": 2023,
+  "budget": 150000000,
+  "budgetRange": null,
+  "gross": 208200000,
+  "source": "https://en.wikipedia.org/wiki/Dungeons_&_Dragons:_Honor_Among_Thieves",
+  "genre": "Fantasy heist comedy"
+ },
+ {
+  "title": "Killers of the Flower Moon",
+  "year": 2023,
+  "budget": 207500000,
+  "budgetRange": [
+   200000000,
+   215000000
+  ],
+  "gross": 158800000,
+  "source": "https://en.wikipedia.org/wiki/Killers_of_the_Flower_Moon",
+  "genre": "Western crime drama"
+ },
+ {
+  "title": "The Creator",
+  "year": 2023,
+  "budget": 80000000,
+  "budgetRange": null,
+  "gross": 104300000,
+  "source": "https://en.wikipedia.org/wiki/The_Creator_(2023_film)",
+  "genre": "Sci-fi action"
+ },
+ {
+  "title": "Dumbo",
+  "year": 2019,
+  "budget": 170000000,
+  "budgetRange": null,
+  "gross": 353300000,
+  "source": "https://en.wikipedia.org/wiki/Dumbo_(2019_film)",
+  "genre": "Live-action fantasy"
+ },
+ {
+  "title": "Tron: Legacy",
+  "year": 2010,
+  "budget": 170000000,
+  "budgetRange": null,
+  "gross": 409900000,
+  "source": "https://en.wikipedia.org/wiki/Tron:_Legacy",
+  "genre": "Sci-fi action"
+ },
+ {
+  "title": "Prince of Persia: The Sands of Time",
+  "year": 2010,
+  "budget": 175000000,
+  "budgetRange": [
+   150000000,
+   200000000
+  ],
+  "gross": 336400000,
+  "source": "https://en.wikipedia.org/wiki/Prince_of_Persia:_The_Sands_of_Time_(film)",
+  "genre": "Fantasy action"
+ },
+ {
+  "title": "Battleship",
+  "year": 2012,
+  "budget": 214500000,
+  "budgetRange": [
+   209000000,
+   220000000
+  ],
+  "gross": 303000000,
+  "source": "https://en.wikipedia.org/wiki/Battleship_(film)",
+  "genre": "Military sci-fi action"
+ },
+ {
+  "title": "The Mummy",
+  "year": 2017,
+  "budget": 160000000,
+  "budgetRange": [
+   125000000,
+   195000000
+  ],
+  "gross": 410000000,
+  "source": "https://en.wikipedia.org/wiki/The_Mummy_(2017_film)",
+  "genre": "Action horror"
+ },
+ {
+  "title": "Wall Street",
+  "year": 1987,
+  "budget": 16500000,
+  "budgetRange": null,
+  "gross": 43800000,
+  "source": "https://en.wikipedia.org/wiki/Wall_Street_(1987_film)",
+  "genre": "Financial drama"
+ },
+ {
+  "title": "Groundhog Day",
+  "year": 1993,
+  "budget": 22300000,
+  "budgetRange": [
+   14600000,
+   30000000
+  ],
+  "gross": 105000000,
+  "source": "https://en.wikipedia.org/wiki/Groundhog_Day_(film)",
+  "genre": "Fantasy comedy"
  }
 ];

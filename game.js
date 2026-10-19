@@ -15,12 +15,15 @@ const lohi=f=>f.budgetRange?f.budgetRange:[f.budget,f.budget];
 const ratio=(g,f)=>{const[lo,hi]=lohi(f);return g>=lo&&g<=hi?1:g<lo?lo/g:g/hi};
 const tierIdx=r=>CLIMB.findIndex(a=>r<=a[0]);
 const shelfOk=(s,f)=>{if(s==null)return false;const[lo,hi]=lohi(f),S=SHELVES[s];return hi>=S[1]&&lo<(s===5?Infinity:S[2])};
-function scoreDay(items){let L=0,tot=0,maxM=1;const films=items.map((x,k)=>{const ti=x.tier!=null?x.tier:tierIdx(x.r);let base=CLIMB[ti][1],note='';
+// v4 (records with s:1): climb interpolates smoothly in log(ratio) between tier anchors, so 11% off no longer drops 3,000→2,000 m.
+const ANCH=[[1.1,3000],[1.17,2000],[1.37,1300],[1.73,700],[2.45,350],[4,150]];// anchors at each tier's geometric midpoint, so the average day is unchanged
+const smoothBase=r=>{if(r<=1.1)return 3000;if(r>=4)return 150;let i=0;while(r>ANCH[i+1][0])i++;const[a0,b0]=ANCH[i],[a1,b1]=ANCH[i+1],t=Math.log(r/a0)/Math.log(a1/a0);return Math.round(Math.exp(Math.log(b0)+(Math.log(b1)-Math.log(b0))*t)/10)*10};
+function scoreDay(items){let L=0,tot=0,maxM=1;const films=items.map((x,k)=>{const ti=x.tier!=null?x.tier:tierIdx(x.r);let base=x.smooth&&x.tier==null?smoothBase(x.r):CLIMB[ti][1],note='';
   if(x.shelfOk&&base<FLOOR){base=FLOOR;note='shelf floor'}if(x.prod&&base>PCAP){base=PCAP;note='🎬 capped'}
   const L0=L;L=x.right?Math.min(5,L+1):Math.max(0,L-1);const head=k===6&&x.right?HEAD:1,gain=Math.round(base*MULT[L]*head);tot+=gain;maxM=Math.max(maxM,MULT[L]);
   return{ti,base,note,L0,L,mult:MULT[L],head,gain,cum:tot}});
  return{films,total:tot,maxMult:maxM,rights:items.filter(x=>x.right).length,level:L}}
-const itemsOf=r=>r.map(x=>{const f=F[x.i];return{r:ratio(x.g,f),shelfOk:shelfOk(x.shelf,f),right:x.call===tier(f.gross/f.budget),prod:!!x.prod}});
+const itemsOf=r=>r.map(x=>{const f=F[x.i];return{r:ratio(x.g,f),shelfOk:shelfOk(x.shelf,f),right:x.call===tier(f.gross/f.budget),prod:!!x.prod,smooth:!!x.s}});
 const prodHint=(g,f)=>{const r=ratio(g,f),[lo]=lohi(f);return r<=1.1?'✓':g<lo?'↑':'↓'};
 // v3: the dive is chosen by the day's final altitude. [min metres, kind, name, emoji, judges' base score]
 const DIVES=[[0,'belly','Belly Flop','💦',3],[6000,'cannon','Cannonball','💣',5.5],[12000,'flip','Front Flip','🤸',7],[25000,'hero','The Superhero','🦸',8],[50000,'star','Starfish Twister','⭐',9],[100000,'reentry','Re-entry Triple','☄️',9.5]];
@@ -55,16 +58,21 @@ const nice=v=>{const p=Math.pow(10,Math.floor(Math.log10(v))-1);return Math.roun
 const s2v=(x,k)=>{const S=SHELVES[k];return Math.exp(Math.log(S[1])+(Math.log(S[2])-Math.log(S[1]))*x/1000)};
 const v2s=(v,k)=>{const S=SHELVES[k];return clamp(1000*(Math.log(v)-Math.log(S[1]))/(Math.log(S[2])-Math.log(S[1])),0,1000)};
 // ================= storage (floppr5, migrated from floppr4) =================
-const KEY='floppr5',DEF={days:{},classic:{},streak:0,last:0,best:0,freezes:0,album:{},seen:0,rehearsed:0};
+const KEY='floppr5',DEF={days:{},classic:{},streak:0,last:0,best:0,freezes:0,album:{},dives:{},seen:0,rehearsed:0};
 const classicH=r=>r.reduce((h,x)=>Math.max(0,h+(x.up||0)+(x.bonus||0)),0);
 function migrate(o){const d=JSON.parse(JSON.stringify(DEF));if(!o)return d;for(const n in o.days||{}){const r=(o.days[n]||{}).r||[];if(r.length)d.classic[n]={m:classicH(r),done:r.length>=7}}
  d.streak=o.streak||0;d.last=o.last||0;d.bestClassic=o.best||0;d.seen=o.seen||0;d.rehearsed=o.seen?1:0;d.migrated=1;return d}
-function loadLS(){let d=null;try{d=JSON.parse(localStorage[KEY]||'null')}catch(e){}if(!d){let o=null;try{o=JSON.parse(localStorage.floppr4||'null')}catch(e){}d=migrate(o)}return Object.assign(JSON.parse(JSON.stringify(DEF)),d)}
+function loadLS(){let d=null;try{d=JSON.parse(localStorage[KEY]||'null')}catch(e){}if(!d){let o=null;try{o=JSON.parse(localStorage.floppr4||'null')}catch(e){}d=migrate(o)}if(typeof d!=='object'||Array.isArray(d))d={};const o=JSON.parse(JSON.stringify(DEF));
+ for(const k in d){if(!(k in DEF)){o[k]=d[k];continue}if(typeof DEF[k]==='object'?(d[k]&&typeof d[k]==='object'&&!Array.isArray(d[k])):typeof d[k]===typeof DEF[k])o[k]=d[k]}
+ for(const n in o.days){const x=o.days[n];if(!x||!Array.isArray(x.r)||x.r.some(r=>!r||typeof r.i!=='number'||!F[r.i]||typeof r.g!=='number'))delete o.days[n];else if(x.r.length>7)x.r.length=7}
+ for(const k of['best','streak','last','freezes'])if(!isFinite(o[k])||o[k]<0)o[k]=0;return o}
 const LS=loadLS();const save=()=>{try{localStorage[KEY]=JSON.stringify(LS)}catch(e){}};save();
 function streakOnComplete(S,n){if(S.last===n)return S;const gap=S.last?n-S.last-1:0;S.usedFreeze=0;
  if(!S.last||gap<0)S.streak=1;else if(gap===0)S.streak++;else if(gap<=S.freezes){S.freezes-=gap;S.usedFreeze=gap;S.streak++}else S.streak=1;
  S.last=n;if(S.streak%7===0)S.freezes=Math.min(2,(S.freezes||0)+1);return S}
 const streakShown=()=>{const gap=todayNo-LS.last-1;return gap<=0||gap<=LS.freezes?LS.streak:0};
+// v4: Sydney-midnight rollover while the tab stays open: reload to the new day when nothing is mid-flight
+const rollCheck=()=>{if(document.hidden)return;const p=sydParts(),n=Math.floor((Date.UTC(p.year,p.month-1,p.day)-LAUNCH)/864e5)+1;if(n!==todayNo&&!busy&&mode!=='archive'&&!(st&&st.r&&st.r.length>0&&st.r.length<7))location.reload()};document.addEventListener('visibilitychange',rollCheck);addEventListener('focus',rollCheck);setInterval(rollCheck,60000);
 const qs=new URLSearchParams(location.search);let dayNo=todayNo,mode='daily';
 if(qs.has('day')){dayNo=Math.min(todayNo,Math.max(1,parseInt(qs.get('day'))||todayNo));if(dayNo!==todayNo)mode='archive'}
 const VS=(()=>{const m=/^(\d+)\.(\d+)$/.exec(qs.get('vs')||'');return m?{day:+m[1],m:+m[2]}:null})();
@@ -80,7 +88,7 @@ function layout(){const vh=innerHeight,mob=isMobile();Lay.mob=mob;
  {let last=-1e9;const mk=[];BANDS.slice(1).forEach(b=>mk.push([B.Y(b.lo,BP),`<span class="bmark" style="bottom:${B.Y(b.lo,BP).toFixed(0)}px">${fmtAlt(b.lo)}</span>`,1]));
   LM.forEach(l=>{const y=B.Y(l.h,BP);mk.push([y,`<span class="mile${l.au?' au':''}" style="bottom:${y.toFixed(0)}px">${l.e} ${l.n} <i>${l.range||fmtAlt(l.h)}</i></span>`,0])});
   const bandYs=mk.filter(m=>m[2]).map(m=>m[0]);mk.sort((a,b)=>a[0]-b[0]);
-  E.marks.innerHTML=mk.filter(m=>{if(m[2])return true;if(m[0]-last<22||bandYs.some(y=>Math.abs(y-m[0])<20))return false;last=m[0];return true}).map(m=>m[1]).join('')}
+  E.marks.innerHTML=mk.filter(m=>{if(m[2])return true;if(m[0]-last<22||bandYs.some(y=>Math.abs(y-m[0])<20))return false;last=m[0];return true}).map(m=>m[1]).join('')+'<span id="pbMark" class="pb" hidden></span>';pbMark()}
  B.build(E.near,E.far,E.front,BP,.6);E.farProps=$$('#far .prop').map(el=>[el,+el.dataset.b]);
  Lay.ladCX=E.ladder.offsetLeft+E.ladder.offsetWidth/2;Lay.pipW=E.pipWrap.offsetWidth;Lay.feet=Lay.pipW*.08;
  Lay.poolCX=E.pool.offsetLeft+E.pool.offsetWidth/2;Lay.boardL=mob?110:150;E.board.setAttribute('width',Lay.boardL+10);E.board.setAttribute('viewBox',`0 0 ${Lay.boardL+10} 60`);E.board.style.left=(Lay.ladCX-7)+'px';
@@ -92,8 +100,13 @@ const V={lmTop:0,alt:0,Y:0,fromAlt:0,toAlt:0,t0:0,dur:1,mode:'idle',amp:0,ph:0,c
 let gt=0,holdUntil=0,trauma=0,lastT=performance.now(),lastSky=-1,musicBand=0;window.__trace=[];
 const addTrauma=x=>{if(RM){E.height.classList.remove('flash');void E.height.offsetWidth;E.height.classList.add('flash');return}trauma=Math.min(1,trauma+x)};
 const hitStop=ms=>{holdUntil=Math.max(holdUntil,performance.now()+ms)};
-const climbDur=(a0,a1)=>{const bc=Math.max(0,B.bandOf(a1)-B.bandOf(a0)),g=Math.max(100,Math.abs(a1-a0));return clamp(700+650*bc+250*Math.log10(g/100),900,3200)};
-function climbTo(alt,onDone){V.fromAlt=V.alt;V.toAlt=alt;V.t0=gt;V.dur=(RM?300:climbDur(V.fromAlt,alt))/1000;V.onDone=onDone;
+// v4: duration grows with the log of the metres gained (plus a little for on-screen distance), so bigger climbs always take longer.
+// v3 used zones crossed, so 24 km could take 1.3 s while 3 km took 3 s.
+const climbDur=(a0,a1)=>{const g=Math.max(150,Math.abs(a1-a0)),px=Math.abs(B.Y(a1,Lay.BP)-B.Y(a0,Lay.BP));return clamp(850+480*Math.log10(g/150)+.22*px+.4*Math.max(0,px-800),900,3200)};
+// rungs Pip visibly passes: never fewer than 6 + 8·log10(m/150), so a 450 m climb at 22 km still reads as a climb (v3 moved 11 px)
+const climbRungs=(a0,a1)=>{const g=Math.max(150,Math.abs(a1-a0)),px=Math.abs(B.Y(a1,Lay.BP)-B.Y(a0,Lay.BP));return Math.max(px/RUNG,6+8*Math.log10(g/150))};
+const RUNG=24;let rungOff=0;
+function climbTo(alt,onDone){V.fromAlt=V.alt;V.toAlt=alt;V.t0=gt;V.dur=(RM?300:climbDur(V.fromAlt,alt))/1000;V.onDone=onDone;const px=Math.abs(B.Y(alt,Lay.BP)-B.Y(V.alt,Lay.BP));V.extra=Math.max(0,climbRungs(V.alt,alt)*RUNG-px);V.off0=rungOff;V.lastE=0;
  if(alt===V.alt){V.mode='cling';onDone&&onDone();return}V.mode='climb';setFace(alt<V.alt?'worried':'focus');if(RM){E.fade.classList.remove('go');void E.fade.offsetWidth;E.fade.classList.add('go')}}
 // ================= Pip =================
 const FACES={happy:['M71 41 Q80 37 88 41','M112 41 Q120 37 129 41','M90 93 Q100 101 110 93',1],joy:['M71 38 Q80 32 88 38','M112 38 Q120 32 129 38','M86 91 Q100 108 114 91 Z',1],
@@ -114,19 +127,19 @@ function ladderLimbs(){const s=Math.sin(V.ph)*V.amp,c=Math.cos(V.ph)*V.amp;
 const pipScreen=()=>{const r=E.pipWrap.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/3}};
 // ================= band crossing =================
 const MUSIC=[0,15,35,55,80,80,80,80];
-function onBand(bi,silent){V.band=bi;E.hband.textContent=BANDS[bi].n;if(silent)return;
+function onBand(bi,silent){V.band=bi;A.setZone&&A.setZone(bi);E.hband.textContent=BANDS[bi].n;if(silent)return;
  const c=E.bandCard;c.querySelector('b').textContent=BANDS[bi].n;const b=BANDS[bi];c.querySelector('em').textContent=`${b.icon} ${fmtAlt(b.lo)}${bi<7?'–'+fmtAlt(b.hi):'+'}${LS.album[bi]&&LS.album[bi].day===dayNo&&mode==='daily'?' · postcard unlocked!':''}`;
- c.classList.remove('show','mini');void c.offsetWidth;c.classList.add('show');clearTimeout(onBand.t);onBand.t=setTimeout(()=>c.classList.remove('show'),1600);
- addTrauma(.15);A.sfx.chime(bi);navigator.vibrate&&navigator.vibrate([15,40,15])}
+ {const hb=Math.max(0,...['#height','#hud','#updraft','#hud .logo','#mute'].map(s=>{const e=$(s);return e&&e.offsetParent!==null?e.getBoundingClientRect().bottom:0}));c.style.top=Math.round(hb+14)+'px'}c.classList.remove('show','mini');void c.offsetWidth;c.classList.add('show');clearTimeout(onBand.t);onBand.t=setTimeout(()=>c.classList.remove('show'),1600);
+ addTrauma(.15);A.sfx.chime(bi);A.setZone&&A.setZone(bi);navigator.vibrate&&navigator.vibrate([15,40,15])}
 // ---- landmark + gain pop-ups that ride alongside Pip ----
 function lmShow(l,stay){const p=E.lmPop;p.innerHTML=`<small>${stay?'Today\'s peak':'Passed'}</small><span>${l.e} <b>${l.n}</b> <i>${l.range||fmtAlt(l.h)}</i></span>`;
- p.classList.remove('show','stay');void p.offsetWidth;p.classList.add('show');if(stay)p.classList.add('stay');if(!stay)A.sfx.tick(6);
+ p.classList.remove('show','stay');void p.offsetWidth;p.classList.add('show');if(stay)p.classList.add('stay');if(!stay){A.sfx.tick(6);A.sfx.landmark(Math.max(0,LM.indexOf(l)))}
  clearTimeout(lmShow.t);if(!stay)lmShow.t=setTimeout(()=>p.classList.remove('show'),1500);window.__lmShown=(window.__lmShown||[]);window.__lmShown.push(l.n)}
 function peakPop(S){const p=E.lmPop,top=lmBelow(S.total).pop(),bz=burjs(S.total);p.innerHTML=`<small>📸 Today's peak · ${fmtAlt(S.total)}</small><span>${top?`Higher than ${top.e} <b>${top.n}</b>`:''}</span><span class="bz">🏙️ ${bz>=1?Math.floor(bz)+' Burj Khalifa'+(Math.floor(bz)===1?'':'s')+' tall':Math.round(bz*100)+'% of a Burj Khalifa'}</span>`;
  p.classList.remove('show');void p.offsetWidth;p.classList.add('show','stay');clearTimeout(lmShow.t)}
 function gainShow(txt,ti){const g=E.gainPop;g.innerHTML=txt;g.className='t'+ti;void g.offsetWidth;g.classList.add('show');clearTimeout(gainShow.t);gainShow.t=setTimeout(()=>g.classList.remove('show'),2600)}
 function followPops(){const on=E.lmPop.classList.contains('show')||E.gainPop.classList.contains('show');if(!on)return;const r=E.pipWrap.getBoundingClientRect(),W=innerWidth,bc=E.bandCard.classList.contains('show')?E.bandCard.getBoundingClientRect().bottom+8:0,minY=Math.max(Lay.mob?100:90,bc);
- if(E.lmPop.classList.contains('show')){const w=E.lmPop.offsetWidth,h=E.lmPop.offsetHeight;let x=r.right+10,y=r.top+r.height*.1-h/2;if(x+w>W-8){x=clamp(r.left+r.width/2-w/2,8,W-8-w);y=r.top-h-12}y=clamp(y,minY,innerHeight-h-(Lay.mob&&!document.body.classList.contains('climbing')&&!document.body.classList.contains('diving')?Lay.sheet+12:12));E.lmPop.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`}
+ if(E.lmPop.classList.contains('show')){const w=E.lmPop.offsetWidth,h=E.lmPop.offsetHeight;let x=r.right+10,y=r.top+r.height*.1-h/2;if(x+w>W-8){x=clamp(r.left+r.width/2-w/2,8,W-8-w);y=r.top-h-12}y=clamp(y,minY,innerHeight-h-(Lay.mob&&!document.body.classList.contains('climbing')&&!document.body.classList.contains('diving')?Lay.sheet+12:12));if(x<r.right-4&&x+w>r.left+4&&y<r.bottom-4&&y+h>r.top+4){const yb=r.bottom+10;if(yb+h<innerHeight-12)y=yb;else{x=r.left-w-10>=8?r.left-w-10:Math.min(W-8-w,r.right+10)}}E.lmPop.style.transform=`translate(${x.toFixed(1)}px,${y.toFixed(1)}px)`}
  if(E.gainPop.classList.contains('show')){const w=E.gainPop.offsetWidth;let x=r.left+r.width/2-w/2;x=clamp(x,8,W-w-8);E.gainPop.style.transform=`translate(${x.toFixed(1)}px,${Math.max(minY-10,r.top-46).toFixed(1)}px)`}}
 function toast(msg){const t=E.toast;t.innerHTML=msg;t.classList.remove('show');void t.offsetWidth;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2600)}
 // ================= wind =================
@@ -144,7 +157,12 @@ function windStep(t,dt){const alt=V.mode==='climb'||V.mode==='cling'?V.alt:0,bi=
 // ================= frame loop =================
 function frame(t){const rdt=Math.min(.05,(t-lastT)/1000);lastT=t;const frozen=t<holdUntil,dt=frozen?0:rdt;gt+=dt;const BP=Lay.BP;let pipY,pipX=0,rot=0;
  if(V.mode==='climb'){const p=(gt-V.t0)/V.dur,y0=B.Y(V.fromAlt,BP),y1=B.Y(V.toAlt,BP),prevY=V.Y;V.Y=RM?(p<.5?y0:y1):lerp(y0,y1,ease(p));V.alt=B.H(V.Y,BP);
-  const spd=dt?Math.abs(V.Y-prevY)/dt:0;V.amp=lerp(V.amp,clamp(spd/120,0,1),Math.min(1,dt*10));V.ph+=Math.min(spd/Lay.rung,3.2)*Math.PI*2*dt;
+  const e=RM?(p<.5?0:1):ease(p),dE=e-V.lastE;V.lastE=e;
+  // extra rungs scroll down the ladder texture (treadmill) so short climbs still show rungs passing
+  if(!RM&&V.extra){rungOff=V.off0+V.extra*e;E.ladder.style.setProperty('--ro',(-rungOff%RUNG).toFixed(2)+'px')}
+  const vis=Math.abs(V.Y-prevY)+V.extra*Math.abs(dE),spd=dt?vis/dt:0;window.__climbVis=(window.__climbVis||0)+vis;
+  V.amp=lerp(V.amp,clamp(spd/120,0,1),Math.min(1,dt*10));V.ph+=clamp(spd/(2*RUNG),p<.95?1.4:0,3.4)*Math.PI*2*dt;
+  if(E.gainPop.classList.contains('show')&&V.gainTxt)E.gainPop.querySelector('b').textContent='+'+fmtAlt((V.toAlt-V.fromAlt)*e);
   if(!RM&&spd>1.5*Lay.vh&&Math.random()<.5)FX.speed(1);
   const bi=B.bandOf(V.alt);if(bi>V.band)onBand(bi);else if(bi<V.band)onBand(bi,true);
   E.hm.textContent=fmtAlt(V.alt);if(V.alt>V.lmTop){const cr=lmBetween(V.lmTop,V.alt);V.lmTop=V.alt;if(cr.length)lmShow(cr[cr.length-1])}
@@ -184,7 +202,7 @@ const dpose=(D,p,face)=>{if(D.pose!==p){D.pose=p;setPose(p,face)}};
 function dive(force){if(V.mode!=='cling')return;E.pipSq.style.transform='';const alt=force||V.alt,di=diveIdx(alt),d=DIVES[di],y=V.Y;busy=true;document.body.classList.add('diving');document.body.classList.remove('climbing');
  V.board={y,ext:0,flex:0};E.board.classList.add('on');E.lmPop.classList.remove('show','stay');
  V.dv={phase:'extend',t0:gt,x:0,y,rot:0,kind:d[1],di,d,alt,surf:y+8,bounces:RM?0:(di===0?1:di>=3?3:2),bi:0,pose:'',force:!!force};V.mode='dive';setPose('idle',di===0?'worried':'happy');A.sfx.click();
- const c=E.bandCard;c.querySelector('small').textContent='The dive · from '+fmtAlt(alt);c.querySelector('b').textContent=d[3]+' '+d[2];c.querySelector('em').textContent=di===DIVES.length-1?'Legendary!':'';c.classList.remove('show','mini');void c.offsetWidth;c.classList.add('show');clearTimeout(onBand.t);onBand.t=setTimeout(()=>c.classList.remove('show'),1600)}
+ const c=E.bandCard;c.querySelector('small').textContent='The dive · from '+fmtAlt(alt);c.querySelector('b').textContent=d[3]+' '+d[2];c.querySelector('em').textContent=di===DIVES.length-1?'Legendary!':'';{const hb=Math.max(0,...['#height','#hud','#updraft','#hud .logo','#mute'].map(s=>{const e=$(s);return e&&e.offsetParent!==null?e.getBoundingClientRect().bottom:0}));c.style.top=Math.round(hb+14)+'px'}c.classList.remove('show','mini');void c.offsetWidth;c.classList.add('show');clearTimeout(onBand.t);onBand.t=setTimeout(()=>c.classList.remove('show'),1600)}
 function skipMontage(){const D=V.dv;if(V.mode==='dive'&&D&&D.phase==='fall'&&!D.skipped){D.skipped=1;holdUntil=0;D.T=Math.min(D.T,(gt-D.t0)*1000+1);E.diveName.classList.remove('show');document.body.classList.remove('freeze')}}
 // body shape + rotation for each dive along the fall (p 0..1). Entries end at 180° mod 360 (head first) except belly (flat) and cannonball (feet first).
 function diveShape(D,p){const K=D.kind;let r=0,tw=1;
@@ -228,7 +246,7 @@ function diveStep(t,dt){const D=V.dv,b=V.board,el=(gt-D.t0)*1000,tipX=Lay.boardL
 function splash(D){const km=D.alt/1000,ti=D.di,belly=D.kind==='belly';addTrauma(D.tr);setTimeout(()=>addTrauma(.1),260);setTimeout(()=>addTrauma(.1),520);
  const pr=E.pool.getBoundingClientRect(),cx=Lay.ladCX+D.x,cy=pr.top+2;const n=RM?0:16+10*ti;Object.assign(window.__splash,{drops:n,ring:110+45*ti,tier:ti,kind:D.kind});
  FX.drops(cx,cy,n,(belly?1.15:.8)+ti*.14);if(!RM){for(let k=0;k<2+Math.ceil(ti/2);k++)FX.ring(cx,cy,110+45*ti+k*60,k*.15);if(ti>=4)setTimeout(()=>FX.drops(cx,cy,12+4*ti,.7),180)}
- if(belly){A.sfx.smack();A.sfx.splash(1)}else{A.sfx.splash(.6+.25*ti);if(ti>=2){A.sfx.sparkle();A.sfx.cheer();setTimeout(()=>{const s=pipScreen();FX.sparkle(s.x,s.y,6+2*ti)},150)}}
+ A.sfx.dive(D.kind);if(belly){A.sfx.smack();A.sfx.splash(1)}else{A.sfx.splash(.6+.25*ti);if(ti>=2){A.sfx.sparkle();A.sfx.cheer();setTimeout(()=>{const s=pipScreen();FX.sparkle(s.x,s.y,6+2*ti)},150)}}
  navigator.vibrate&&navigator.vibrate(belly?[60,40,60]:[40+10*ti,30,80+15*ti])}
 // judges' score cards on splashdown
 function showJudges(D){const S=D.force?null:scoreDay(itemsOf(st.r)),j=S?judgesFor(S,dayNo*131+S.total):[0,1,2].map(()=>clamp(DIVES[D.di][4]+.5,0,10));window.__judges=j;
@@ -237,12 +255,14 @@ function showJudges(D){const S=D.force?null:scoreDay(itemsOf(st.r)),j=S?judgesFo
 // end-of-day "photo op": Pip back on the board at today's peak, in that zone's scenery
 function photoOp(S){const y=B.Y(S.total,Lay.BP),tipX=Lay.boardL*.86;V.board={y,ext:1,flex:6,t0:gt-5};E.board.classList.add('on');
  V.dv={phase:'landed',x:tipX,y:y+2,rot:0,kind:diveOf(S)[1],di:diveIdx(S.total),d:diveOf(S),alt:S.total};V.mode='dive';const mid=(Lay.lo+Lay.hi)/2;V.cam=V.camT=Math.max(0,V.dv.y-mid);V.camV=0;
- document.body.classList.add('photo');E.pipSq.style.transform='';E.pipWrap.classList.remove('glow');setPose('proud','joy');lastSky=-1;E.hm.textContent=fmtAlt(S.total);onBand(B.bandOf(S.total),true);peakPop(S)}
+ document.body.classList.add('photo');E.pipSq.style.transform='';E.pipWrap.classList.remove('glow');setPose('proud','joy');lastSky=-1;E.hm.textContent=fmtAlt(S.total);onBand(B.bandOf(S.total),true);peakPop(S);[350,900,1800].forEach(ms=>setTimeout(clearMarks,ms))}
+// v4: hide ladder altitude labels that would sit on Pip at the photo op
+function clearMarks(){if(!document.body.classList.contains('photo'))return;const r=E.pipWrap.getBoundingClientRect();E.marks.querySelectorAll('span').forEach(s=>{const q=s.getBoundingClientRect();s.classList.toggle('hid',q.right>r.left-6&&q.left<r.right+6&&q.bottom>r.top-6&&q.top<r.bottom+6)})}
 // ================= flow =================
 let films,st,busy=false,cur={};
 const REH=F.find(f=>f.title==='Jaws')||F[0];
 const total=()=>scoreDay(itemsOf(st.r)).total;
-function begin(fs,m){films=fs;mode=m;st=(m==='daily'||m==='archive')&&LS.days[dayNo]||{r:[]};document.body.classList.remove('diving','montage','climbing','freeze','photo');E.board.classList.remove('on');V.board=null;V.dv=null;
+function begin(fs,m){films=fs;mode=m;E.marks.querySelectorAll('.hid').forEach(s=>s.classList.remove('hid'));st=(m==='daily'||m==='archive')&&LS.days[dayNo]||{r:[]};document.body.classList.remove('diving','montage','climbing','freeze','photo');E.board.classList.remove('on');V.board=null;V.dv=null;
  $('#kicker').textContent=m==='practice'?'Practice climb':m==='rehearsal'?'Rehearsal · not scored':m==='archive'?`Floppr #${dayNo} · archive`:`Floppr #${dayNo}`;
  $('#coach').hidden=m!=='rehearsal';E.bandCard.classList.remove('show','mini');E.lmPop.classList.remove('show','stay');E.judges.classList.remove('show');E.gainPop.classList.remove('show');E.pipWrap.classList.remove('glow');E.pipSq.style.transform='';
  const S=scoreDay(itemsOf(st.r));V.mode='cling';V.alt=S.total;V.lmTop=V.alt;V.Y=B.Y(V.alt,Lay.BP);V.amp=0;onBand(B.bandOf(V.alt),true);E.hm.textContent=fmtAlt(V.alt);setUpdraft(S.level,0);setPose('ladder');
@@ -271,12 +291,12 @@ function onType(){const v=parse(E.amt.value);E.amt.classList.toggle('bad',!!E.am
 function askProducer(){if(busy||cur.shelf==null||cur.prod||!(+E.prod.dataset.left))return;const f=films[st.r.length],h=prodHint(cur.v,f);cur.prod=true;E.prod.disabled=true;E.prodLeft.textContent=0;E.prod.dataset.left=0;
  hint('🎬 '+{'↑':'<b>↑ Higher</b> than '+fmt(cur.v),'↓':'<b>↓ Lower</b> than '+fmt(cur.v),'✓':'<b>✓ About right</b> at '+fmt(cur.v)}[h]+' <small>(caps at 2 km)</small>','prod');A.sfx.good()}
 function call(v){if(busy||$('#play').hidden||V.mode!=='cling'||cur.shelf==null||!cur.v)return;busy=true;const f=films[st.r.length];
- const rec={i:F.indexOf(f),g:cur.v,call:v,shelf:cur.shelf};if(cur.prod)rec.prod=1;const before=scoreDay(itemsOf(st.r));st.r.push(rec);const S=scoreDay(itemsOf(st.r));persist(before,S);reveal(f,rec,S,before)}
+ const rec={i:F.indexOf(f),g:cur.v,call:v,shelf:cur.shelf,s:1};if(cur.prod)rec.prod=1;const before=scoreDay(itemsOf(st.r));st.r.push(rec);const S=scoreDay(itemsOf(st.r));persist(before,S);reveal(f,rec,S,before)}
 // ---- reveal + cascade (compact: one facts row with the climb in the 4th cell) ----
 let CAS=null;
 function reveal(f,rec,S,before){const fr=S.films[S.films.length-1],T=CLIMB[fr.ti],[lo,hi]=lohi(f),m=f.gross/f.budget,t=tier(m),g=rec.g,right=rec.call===t,head=fr.head>1,isHead=st.r.length===7;
  show('reveal');dots();const rh=$('#rHead');const inR=g>=lo&&g<=hi,pct=Math.round(Math.abs(g<lo?1-g/lo:g/hi-1)*100);
- rh.innerHTML=`${T[2]} <b>${T[3].toUpperCase()}</b> <span>${inR?(f.budgetRange?'inside the range':'spot on'):fr.ti===0?'within 10%':pct+'% '+(g<lo?'under':'over')}</span>`;rh.className='rhead t'+fr.ti;rh.style.visibility='hidden';
+ rh.innerHTML=`${T[2]} <b>${T[3].toUpperCase()}</b> <span>${inR?(f.budgetRange?'inside the range':'spot on'):fr.ti===0?'within 10%':pct+'% '+(g<lo?'under':'over')}${!inR&&fr.ti>=1&&fr.ti<=2?` · ${Math.max(1,Math.ceil((ratio(g,f)/1.1-1)*100))}% from 🎯`:''}</span>`;rh.className='rhead t'+fr.ti;rh.style.visibility='hidden';
  $('#rGuess').textContent=fmt(g);$('#rOff').textContent=inR?'✓':`${g<lo?'⬇':'⬆'}${pct}%`;
  $('#rBudget').textContent=f.budgetRange?fmtR(lo,hi):fmt(f.budget);$('#rRange').textContent=f.budgetRange?'range':'';
  $('#rGross').textContent=fmt(f.gross);$('#rMult').textContent=`${xf(m)}× back`;
@@ -304,7 +324,7 @@ function casFinish(){const c=CAS;if(!c||c.done)return;c.done=true;window.__lastC
  if(!c.upd){c.upd=true;setUpdraft(c.fr.L,c.fr.L>c.fr.L0?1:c.fr.L<c.fr.L0?-1:0)}
  $('#rHead').style.visibility='';$('#rCall').style.visibility='';$('#cMath').textContent=`${fmtM(c.fr.base)} × ⚡${c.fr.mult}${c.fr.head>1?' × ★2':''}`;$('#cGain').textContent='+'+fmtAlt(c.fr.gain);window.__lastCascade.shown=$('#cGain').textContent;
  // hide the card while Pip climbs so the sky + landmarks are visible; it slides back when he arrives
- document.body.classList.add('climbing');gainShow(`${c.T[2]} <b>+${fmtAlt(c.fr.gain)}</b>${c.fr.mult>1?` <small>⚡×${c.fr.mult}${c.fr.head>1?' ★×2':''}</small>`:''}`,c.fr.ti);
+ document.body.classList.add('climbing');V.gainTxt=!RM;gainShow(`${c.T[2]} <b>+${fmtAlt(RM?c.fr.gain:0)}</b>${c.fr.mult>1||c.fr.head>1?` <small>${fmtAlt(c.fr.gain/(c.fr.mult||1)/(c.fr.head||1))} ⚡×${c.fr.mult}${c.fr.head>1?' ★×2':''}</small>`:''}`,c.fr.ti);
  const done=()=>{document.body.classList.remove('climbing');if(!c.right){A.sfx.wobble();react('nervous','worried',1400)}else if(c.fr.ti<=1)react('cheer','joy');else setFace('happy');
   setTimeout(()=>{if(!$('#reveal').hidden)$('#next').focus({preventScroll:true})},60);if(V.queueNext){V.queueNext=false;next()}};
  setTimeout(()=>climbTo(c.S.total,done),RM?0:260)}
@@ -318,6 +338,7 @@ function persist(before,S){if(mode==='practice'||mode==='rehearsal')return;LS.da
  for(let b=b0+1;b<=b1;b++)if(!LS.album[b]){LS.album[b]={day:dayNo,date:todayISO,film:f.title,best:0}}
  if(st.r.length===N){const fb=b1;if(!LS.album[0])LS.album[0]={day:dayNo,date:todayISO,film:F[st.r[0].i].title,best:0};LS.album[fb].best=Math.max(LS.album[fb].best||0,S.total);
   LS.prevBestBand=LS.bestBand==null?-1:LS.bestBand;LS.bestBand=Math.max(LS.bestBand==null?-1:LS.bestBand,fb);LS.prevBest=LS.best;LS.best=Math.max(LS.best,S.total);
+  if(mode==='daily'||mode==='archive'){const dk=diveOf(S)[1];LS.dives=LS.dives||{};LS.dives[dk]=(LS.dives[dk]||0)+1}pbMark();
   const moon=S.films.every(x=>x.ti===0)&&S.rights===7;if(moon&&!LS.album[8])LS.album[8]={day:dayNo,date:todayISO,film:'Moonshot!',best:S.total};
   if(mode==='daily')streakOnComplete(LS,dayNo)}
  save();$('#streak').textContent=streakShown()?'🔥'+streakShown():''}
@@ -371,9 +392,11 @@ async function showEnd(anim){const S=scoreDay(itemsOf(st.r)),di=diveIdx(S.total)
  const lms=lmBelow(S.total);$('#compSrc').innerHTML='Budgets: '+st.r.map(x=>`<a href="${F[x.i].source}" target="_blank" rel="noopener">${F[x.i].title}</a>`).join(' · ')+(lms.length?'<br>Landmark heights (Wikipedia): '+lms.map(l=>`<a href="${l.s}" target="_blank" rel="noopener">${l.n}</a>`).join(' · '):'');
  $('#best').textContent=`Best: ${fmtAlt(LS.best||S.total)}${LS.bestClassic?` · Classic best: ${LS.bestClassic} m`:''}`;
  postCanvas=await renderPostcard(S);$('#postImg').src=postCanvas.toDataURL('image/png');$('#postWrap').classList.remove('flip');void $('#postWrap').offsetWidth;if(anim)$('#postWrap').classList.add('flip')}
+function pbMark(){const p=document.getElementById('pbMark');if(!p)return;const b=LS.best||0;p.hidden=!(b>0)||mode==='rehearsal';if(b>0){p.style.bottom=B.Y(b,Lay.BP).toFixed(0)+'px';p.textContent='🏁 Your best '+fmtAlt(b)}}
+function diveRow(){return'<div class="diveRow" aria-label="Dive collection">'+DIVES.map(d=>{const n=(LS.dives||{})[d[1]];return`<span class="${n?'got':'lock'}" title="${n?d[2]+' ×'+n:'Locked: reach '+fmtAlt(d[0])}">${n?d[3]:'❔'}<small>${n?d[2]:fmtAlt(d[0])+'+'}</small></span>`}).join('')+'</div>'}
 function albumHTML(big){return[...BANDS.map((b,i)=>[b,i]),[{n:'Moonshot',post:'Secret: all bullseyes + 7/7 calls',sky:['#0b0818','#3a2a6b'],icon:'🌙'},8]].map(([b,i])=>{const a=LS.album[i];
   return a?`<div class="pc" style="background:linear-gradient(${b.sky[0]},${b.sky[1]})" title="${b.n}"><span>${b.icon}</span>${big?`<b>${b.n}</b><small>“${b.post}”<br>${a.date} · ${a.film}${a.best?'<br>best '+fmtAlt(a.best):''}</small>`:''}</div>`:`<div class="pc lock" title="Locked">${big?`<span>?</span><small>${i===8?'Secret':fmtAlt(b.lo||0)+'+'}</small>`:'?'}</div>`}).join('')}
-function albumStrip(){$('#album').innerHTML=albumHTML(false);const n=Object.keys(LS.album).length;$('#albumNote').textContent=`${n}/9 postcards collected`}
+function albumStrip(){$('#album').innerHTML=albumHTML(false)+diveRow();const n=Object.keys(LS.album).length;$('#albumNote').textContent=`${n}/9 postcards collected`}
 async function sharePostcard(){const S=scoreDay(itemsOf(st.r)),t=shareText(S),b=$('#sharePost');if(!postCanvas)postCanvas=await renderPostcard(S);
  const blob=await new Promise(r=>postCanvas.toBlob(r,'image/png')),file=new File([blob],`floppr-${dayNo}.png`,{type:'image/png'});
  if(navigator.canShare&&navigator.canShare({files:[file]})){try{await navigator.share({files:[file],text:t});return}catch(e){if(e&&e.name==='AbortError')return}}
@@ -397,7 +420,7 @@ $('#scene').addEventListener('pointerdown',skipMontage);E.panel.addEventListener
 $('#sharePost').onclick=sharePostcard;$('#challenge').onclick=challenge;
 $('#practice').onclick=()=>{const r=Math.floor(Math.random()*1e6)+5000;begin(setFor(r),'practice')};
 $('#helpBtn').onclick=$('#hudHelp').onclick=()=>$('#help').showModal();$('#helpClose').onclick=()=>$('#help').close();$('#archClose').onclick=()=>$('#arch').close();
-$('#albumBtn').onclick=()=>{$('#albumBig').innerHTML=albumHTML(true);$('#albumDlg').showModal()};$('#albumClose').onclick=()=>$('#albumDlg').close();
+$('#albumBtn').onclick=()=>{$('#albumBig').innerHTML=albumHTML(true)+'<b class="dvH">Dive collection</b>'+diveRow();$('#albumDlg').showModal()};$('#albumClose').onclick=()=>$('#albumDlg').close();
 $('#coachSkip').onclick=()=>{LS.rehearsed=1;save();V.alt=0;begin(setFor(dayNo),'daily')};
 $('#archBtn').onclick=()=>{$('#archList').innerHTML='';for(let n=todayNo;n>=Math.max(1,todayNo-60);n--){const b=document.createElement('button'),d=LS.days[n],c=LS.classic[n];
   b.textContent=`#${n}${n===todayNo?' (today)':''} ${d&&d.r.length>=N?'· '+fmtAlt(scoreDay(itemsOf(d.r)).total):d&&d.r.length?'· in progress':''}${c?` · classic ${c.m} m${c.done?'':' (unfinished)'}`:''}`;b.onclick=()=>location.search='?day='+n;$('#archList').appendChild(b)}$('#arch').showModal()};
@@ -407,7 +430,7 @@ const mbtn=$('#mute'),mi=()=>mbtn.textContent=A.muted?'🔇':'🔊';mi();mbtn.on
 let rz;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(layout,120)});
 $('#streak').textContent=streakShown()?'🔥'+streakShown():'';
 FX.init(E.fxc);layout();if(document.fonts)document.fonts.ready.then(layout);
-window.__floppr={parse,setFor,todayNo,V,Lay,tier,F,scoreDay,itemsOf,ratio,tierIdx,shelfOk,shelfOf,prodHint,DIVES,diveIdx,diveOf,judgesFor,LM,lmBetween,lmBelow,burjs,landShare,debugDive:alt=>{busy=true;document.body.classList.add('diving');V.mode='cling';V.alt=alt;V.Y=B.Y(alt,Lay.BP);V.cam=V.camT=Math.max(0,V.Y-Lay.avail*.4);onBand(B.bandOf(alt),true);lastSky=-1;dive(alt)},migrate,streakOnComplete,LS,B,fmtAlt,climbDur,SHELVES,v2s,s2v,get trauma(){return trauma},get cur(){return cur},get st(){return st},get films(){return films},get mode(){return mode},get cas(){return CAS},renderPostcard:()=>renderPostcard(scoreDay(itemsOf(st.r))),shareText:()=>shareText(scoreDay(itemsOf(st.r))),addTrauma};
+window.__floppr={smoothBase,climbDur,climbRungs,parse,setFor,todayNo,V,Lay,tier,F,scoreDay,itemsOf,ratio,tierIdx,shelfOk,shelfOf,prodHint,DIVES,diveIdx,diveOf,judgesFor,LM,lmBetween,lmBelow,burjs,landShare,debugDive:alt=>{busy=true;document.body.classList.add('diving');V.mode='cling';V.alt=alt;V.Y=B.Y(alt,Lay.BP);V.cam=V.camT=Math.max(0,V.Y-Lay.avail*.4);onBand(B.bandOf(alt),true);lastSky=-1;dive(alt)},migrate,streakOnComplete,LS,B,fmtAlt,climbDur,SHELVES,v2s,s2v,get trauma(){return trauma},get cur(){return cur},get st(){return st},get films(){return films},get mode(){return mode},get cas(){return CAS},renderPostcard:()=>renderPostcard(scoreDay(itemsOf(st.r))),shareText:()=>shareText(scoreDay(itemsOf(st.r))),addTrauma};
 if(!LS.rehearsed&&mode==='daily'&&!(LS.days[dayNo]&&LS.days[dayNo].r.length)&&DEBUG_ALT==null)begin([REH],'rehearsal');else begin(setFor(dayNo),mode);
 if(DEBUG_ALT!=null){V.alt=DEBUG_ALT;V.Y=B.Y(DEBUG_ALT,Lay.BP);V.cam=V.camT=Math.max(0,V.Y-Lay.avail*.4);onBand(B.bandOf(DEBUG_ALT),true);E.hm.textContent=fmtAlt(DEBUG_ALT)}
 requestAnimationFrame(frame)})();

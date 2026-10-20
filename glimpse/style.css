@@ -46,3 +46,13 @@ dialog{border:0;border-radius:20px;background:#2a2460;color:#fff;max-width:420px
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 @media(max-width:360px){h1{font-size:23px}.brand{font-size:20px}#s-num{font-size:52px}#list{grid-template-columns:1fr}}
 #scene #o-cloud *{stroke:none!important}#scene #o-cloud{filter:drop-shadow(0 2px 0 #3b2f4a55)}
+
+.hero{text-align:center;padding:6px 0 4px}.hero .score{justify-content:center}#s-num{font-size:72px;font-variant-numeric:tabular-nums}.hero .lbl{font-size:22px;color:var(--sun);font-weight:700}
+.sub{font-size:18px;font-weight:600;margin-top:2px}.ptslive{color:var(--sun)}
+.tiers{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:12px 0 8px}.tier{background:#16123a;border-radius:12px;padding:8px 4px;text-align:center;line-height:1.15}.tier span{font-size:20px;display:block}.tier b{font-size:22px;display:block}.tier small{color:var(--muted);font-size:11px}
+.tier.t3{box-shadow:inset 0 0 0 2px #7ad7ff}.tier.t2{box-shadow:inset 0 0 0 2px #ffd23f88}
+.rarest{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:linear-gradient(90deg,#3a2f8a,#2a2460);border-radius:12px;padding:10px 12px;margin-bottom:6px}.rarest b{font-size:18px}
+.chal{background:#ff6b6b22;border:2px solid #ff6b6b88;border-radius:12px;padding:10px 12px;margin:8px 0;font-weight:600}
+#stats .g2{grid-template-columns:1fr 1fr}
+.chip.t3{background:#7ad7ff;color:#062b3a}.chip.t2{background:#ffd23f;color:#3a2c00}
+@media(max-width:360px){#s-num{font-size:58px}.tier small{font-size:10px}}

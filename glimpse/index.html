@@ -1,61 +1,41 @@
-<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><meta name="robots" content="noindex,nofollow"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Glimpse (prototype)</title>
-<style>
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;background:#1b1f3b;color:#fff;display:flex;justify-content:center}
-#app{width:100%;max-width:520px;padding:12px;min-height:100vh;display:flex;flex-direction:column;gap:10px}
-h1{margin:4px 0;font-size:22px}.sub{opacity:.75;font-size:14px}
-#scene{line-height:0;text-align:center}#scene svg{display:block;margin:0 auto;max-width:100%;height:auto;max-height:58vh;border-radius:14px}
-.bar{height:8px;background:#333a6b;border-radius:4px;overflow:hidden}.bar i{display:block;height:100%;background:#ffd23f;width:100%}
-button{font:inherit;font-weight:700;padding:12px 18px;border:0;border-radius:12px;background:#ffd23f;color:#1b1f3b;font-size:17px}
-input{font:inherit;font-size:18px;padding:12px;border-radius:12px;border:2px solid #4c5599;width:100%;background:#262b55;color:#fff}
-#chips{display:flex;flex-wrap:wrap;gap:6px}.chip{padding:5px 10px;border-radius:999px;font-size:14px}
-.ok{background:#2ec4b6;color:#062}.no{background:#555b7a}.vague{background:#f4a261;color:#3a1d00}.dup{background:#3d4470}
-.hidden{display:none!important}.row{display:flex;justify-content:space-between;align-items:center}
-#scene.reveal g.missed{opacity:.25}#scene.reveal g.found{filter:drop-shadow(0 0 4px #2ec4b6)}
-#list{display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:14px}#list .m{opacity:.55}
-pre{background:#262b55;padding:10px;border-radius:10px;white-space:pre-wrap;font-size:14px}.note{font-size:12px;opacity:.6}
-@media(min-width:900px){#app{max-width:1000px;display:grid;grid-template-columns:1.2fr 1fr;align-items:start}#app>header{grid-column:1/-1}}
-</style></head><body><div id="app">
-<header><h1>👁️ Glimpse <span class="sub">#1 · prototype</span></h1><div class="sub">Look for 10 seconds. Then name everything you saw in 60.</div></header>
-<div id="left"><div id="scene"></div></div>
-<div id="right">
- <div class="bar"><i id="timer"></i></div>
- <div id="intro"><p>Same picture for everyone today. Type one thing at a time, then hit enter. “Cup and plate” counts for both.</p><button id="go">Start the 10-second look</button></div>
- <div id="typing" class="hidden"><div class="row"><b id="count">0 found</b><span id="secs">60</span></div>
-  <form id="f" onsubmit="return false"><input id="inp" placeholder="type a thing, press enter…" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" autocorrect="off" inputmode="text"></form>
-  <div id="chips" style="margin-top:8px"></div></div>
- <div id="result" class="hidden"><h2 id="score"></h2><div id="list"></div><p class="note" style="opacity:1;color:#f4a261;font-weight:700">⚠️ Rarity % are EXAMPLE DATA, not from real players.</p><pre id="share"></pre><button id="copy">Copy share</button> <button id="again" style="background:#2ec4b6">Play again (demo)</button></div>
-</div></div>
-<script src="matcher.js"></script><script src="scene.svg.js"></script><script>
-const $=id=>document.getElementById(id);const M=window.Matcher;const ids=Object.keys(M.ITEMS);
-const label=id=>M.LABEL[id]||id;
-// EXAMPLE rarity data (fake, deterministic)
-const RARITY=Object.fromEntries(ids.map((id,i)=>[id,[92,88,64,81,95,90,40,71,85,60,22,55,68,77,50,48,35,74,18,58,62,33,45,80,52,28,14,57,30,24][i]]));
-const found=new Set();let phase='intro';
-const sc=$('scene');const fast=new URLSearchParams(location.search);
-function showScene(on){sc.innerHTML=on?SCENE:'<div style="height:300px;display:flex;align-items:center;justify-content:center;color:#888;font:600 18px system-ui;line-height:1.4">🙈 picture hidden<br>what did you see?</div>';}
-showScene(false);
-function bar(ms,done){const t0=performance.now();(function f(){const p=Math.min(1,(performance.now()-t0)/ms);$('timer').style.width=(100-p*100)+'%';if(phase==='typing')$('secs').textContent=Math.ceil((1-p)*ms/1000)+'s';p<1?requestAnimationFrame(f):done();})();}
-const LOOK=+fast.get('look')||10000,TYPE=+fast.get('type')||60000; // overrides only via ?look=&type= (ms)
-$('go').onclick=()=>{phase='look';$('intro').classList.add('hidden');showScene(true);bar(LOOK,startTyping);};
-function startTyping(){phase='typing';showScene(false);$('typing').classList.remove('hidden');$('inp').focus();setTimeout(()=>$('typing').scrollIntoView({block:'start'}),300);bar(TYPE,finish);}
-function chip(t,c){const s=document.createElement('span');s.className='chip '+c;s.textContent=t;$('chips').prepend(s);}
-function submit(v){for(const r of M.matchEntry(v)){if(r.status==='match'){if(found.has(r.item))chip('↺ '+label(r.item),'dup');else{found.add(r.item);chip('✓ '+label(r.item),'ok');}}
- else if(r.status==='vague')chip('“'+v+'”: be more specific','vague');else if(r.status!=='empty')chip('✗ '+v,'no');}
- $('count').textContent=found.size+' found';}
-$('f').addEventListener('submit',e=>{e.preventDefault();const i=$('inp'),v=i.value.trim();if(v){submit(v);i.value='';}i.focus();});
-function finish(){phase='done';$('typing').classList.add('hidden');showScene(true);sc.classList.add('reveal');
- for(const id of ids){const g=sc.querySelector('#o-'+id);if(g)g.classList.add(found.has(id)?'found':'missed');}
- const pts=[...found].reduce((s,id)=>s+(RARITY[id]<25?3:RARITY[id]<50?2:1),0);
- $('score').textContent=`${found.size}/30 spotted · ${pts} pts`;
- $('list').innerHTML=ids.sort((a,b)=>found.has(b)-found.has(a)||RARITY[a]-RARITY[b]).map(id=>`<div class="${found.has(id)?'':'m'}">${found.has(id)?'✅':'▫️'} ${label(id)} <span class="note">${RARITY[id]}%</span></div>`).join('');
- const rare=[...found].filter(id=>RARITY[id]<25).length;
- const grid=ids.slice().sort().map(id=>found.has(id)?(RARITY[id]<25?'💎':'🟩'):'⬛').join('').replace(/(.{10})/gu,'$1\n');
- $('share').textContent=`👁️ Glimpse #1 · ${found.size}/30 · ${rare}💎 rare\n${[...grid].length?grid.trim():''}`;
- $('result').classList.remove('hidden');}
-$('copy').onclick=()=>navigator.clipboard&&navigator.clipboard.writeText($('share').textContent);
-$('again').onclick=()=>{found.clear();$('chips').innerHTML='';$('count').textContent='0 found';sc.classList.remove('reveal');$('result').classList.add('hidden');$('intro').classList.remove('hidden');showScene(false);phase='intro';$('timer').style.width='100%';scrollTo(0,0);};
-// keep input visible above mobile keyboard
-if(window.visualViewport)visualViewport.addEventListener('resize',()=>{if(document.activeElement===$('inp'))$('inp').scrollIntoView({block:'center'});});
-window.__test={submit,finish,startTyping};
-</script></body></html>
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1f1a44">
+<title>Glimpse · a daily memory game (beta)</title>
+<meta property="og:title" content="Glimpse · a daily memory game"><meta property="og:description" content="10 seconds to look. 60 seconds to remember. Same picture for everyone today.">
+<meta property="og:image" content="https://optimusslimes.github.io/floppr/glimpse/og.png">
+<link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"></head><body>
+<div id="app">
+ <header class="top"><div class="brand"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><path d="M4 32 Q32 4 60 32 Q32 60 4 32Z" fill="#fff"/><circle cx="32" cy="32" r="13" fill="#2ec4b6"/><circle cx="32" cy="32" r="6" fill="#1f1a44"/><circle cx="36" cy="28" r="3" fill="#fff"/></svg><span>Glimpse</span><small id="dayno"></small></div>
+ <div class="tools"><button id="btn-sound" class="icon" aria-label="Sound off" title="Sound">🔇</button><button id="btn-stats" class="icon" aria-label="Stats" title="Stats">📊</button><button id="btn-help" class="icon" aria-label="How to play" title="How to play">?</button></div></header>
+ <main>
+  <section id="stage"><div id="scene" class="card"></div><div id="cover" class="card cover hidden" aria-hidden="true"><div><span class="big">🙈</span><b>Picture hidden</b><span id="cover-sub">What did you see?</span></div></div>
+   <div id="count3" class="hidden" aria-live="assertive"></div>
+   <svg id="ring" class="hidden" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19" class="track"/><circle cx="22" cy="22" r="19" class="prog" id="ringp"/><text x="22" y="27" id="ringt">10</text></svg></section>
+  <section id="panel">
+   <div id="p-home" class="pane"><p class="kicker" id="home-scene"></p><h1>Look for <em>10&nbsp;seconds.</em><br>Remember for <em>60.</em></h1><p class="muted">Same picture for everyone today. Name everything you saw.</p><button id="btn-start" class="primary">👁️ Take a glimpse</button><p class="muted small" id="home-note"></p></div>
+   <div id="p-type" class="pane hidden"><div class="row"><b id="found-n">0 found</b><span id="t-left" class="pill">60s</span></div>
+    <div class="tbar"><i id="tbar"></i></div>
+    <form id="f" autocomplete="off"><input id="inp" type="text" placeholder="type a thing, press enter…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" aria-label="Name something you saw"><button class="go" aria-label="Submit">↵</button></form>
+    <div id="chips" aria-live="polite"></div><button id="btn-done" class="ghost small">I'm done</button></div>
+   <div id="p-res" class="pane hidden">
+    <div class="score"><span id="s-num">0</span><span class="of" id="s-of">/24</span><span class="lbl">spotted</span></div>
+    <p id="s-line" class="muted"></p>
+    <div class="share-row"><button id="btn-share" class="primary">Share result</button><button id="btn-copy" class="ghost">Copy</button></div>
+    <pre id="share" aria-label="Share preview"></pre>
+    <h3>What was there <span class="muted small">tap to spot it</span></h3><div id="list"></div>
+    <p class="example">⚠️ "% found" figures are <b>example data</b>, not real players (yet).</p>
+    <div id="review"></div>
+    <div class="next"><span>Next Glimpse in</span><b id="cd">--:--:--</b></div>
+    <div class="demo"><b>Demo</b> <span class="muted small">(doesn't change today's result)</span><div id="demo-btns"></div></div>
+   </div>
+  </section>
+ </main>
+</div>
+<dialog id="d-help"><h2>How to play</h2><ol><li><b>Look.</b> A busy picture appears for <b>10 seconds</b>.</li><li><b>Remember.</b> It hides. You get <b>60 seconds</b> to type everything you saw, one at a time. "Cup and plate" counts for both.</li><li><b>Chips tell you instantly:</b> <span class="chip ok">✓ found</span> <span class="chip no">✗ not there</span> <span class="chip vague">too vague</span></li><li><b>Rare finds</b> 💎 are things few people remember.</li></ol><p class="muted small">Aussie, UK and US names all work: esky, cooler, chilly bin. Typos are fine.</p><button class="primary" data-close>Got it</button></dialog>
+<dialog id="d-stats"><h2>Your stats</h2><div id="stats"></div><button class="primary" data-close>Close</button></dialog>
+<div id="toast" role="status"></div>
+<script src="matcher.js"></script><script src="scenes.js"></script><script src="app.js"></script>
+</body></html>

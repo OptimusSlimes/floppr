@@ -1,6 +1,6 @@
 <!doctype html><html lang="en-AU"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#1f1a44">
+<meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#cfe3f7">
 <title>Glimpse · a daily memory game (beta)</title>
 <meta property="og:title" content="Glimpse · a daily memory game"><meta property="og:description" content="10 seconds to look. 60 seconds to remember. Same picture for everyone today.">
 <meta property="og:image" content="https://optimusslimes.github.io/floppr/glimpse/og.png">
@@ -11,11 +11,12 @@
  <header class="top"><div class="brand"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><path d="M4 32 Q32 4 60 32 Q32 60 4 32Z" fill="#fff"/><circle cx="32" cy="32" r="13" fill="#2ec4b6"/><circle cx="32" cy="32" r="6" fill="#1f1a44"/><circle cx="36" cy="28" r="3" fill="#fff"/></svg><span>Glimpse</span><small id="dayno"></small></div>
  <div class="tools"><button id="btn-music" class="icon" title="Music">🎵</button><button id="btn-sound" class="icon" title="Sound effects">🔔</button><button id="btn-stats" class="icon" aria-label="Stats" title="Stats">📊</button><button id="btn-help" class="icon" aria-label="How to play" title="How to play">?</button></div></header>
  <main>
-  <section id="stage"><div id="scene" class="card"></div><div id="cover" class="card cover hidden" aria-hidden="true"><div><span class="big">🙈</span><b>Picture hidden</b><span id="cover-sub">What did you see?</span></div></div>
+  <section id="stage"><div id="scene" class="card"></div><div id="cover" class="card cover hidden"><div id="intro" class="intro" aria-label="Scene of the day"><div class="tile" aria-hidden="true"><i></i><i></i><i></i></div><span class="kick">Scene of the day</span><b class="it"><span id="intro-e"></span> <span id="intro-t"></span></b><span id="intro-n" class="muted"></span></div><div class="hid"><span class="big" aria-hidden="true">🙈</span><b>Picture hidden</b><span id="cover-sub">What did you see?</span></div></div>
    <div id="count3" class="hidden" aria-live="assertive"></div>
    <svg id="ring" class="hidden" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19" class="track"/><circle cx="22" cy="22" r="19" class="prog" id="ringp"/><text x="22" y="27" id="ringt">10</text></svg></section>
   <section id="panel">
    <div id="p-home" class="pane"><div id="chal" class="chal hidden"></div><p class="kicker" id="home-scene"></p><h1>Look for <em>10&nbsp;seconds.</em><br>Remember for <em>60.</em></h1><p class="muted">Same picture for everyone today. Name everything you saw.</p><button id="btn-start" class="primary">👁️ Take a glimpse</button><p class="muted small" id="home-note"></p></div>
+   <div id="p-look" class="pane hidden look-tip" aria-live="polite"><b>👀 Memorise everything you can</b><span class="muted">The picture hides when the ring runs out. Then type what you saw.</span></div>
    <div id="p-type" class="pane hidden"><div class="row"><b id="found-n">0 found</b><b id="pts-live" class="ptslive">0 pts</b><span id="t-left" class="pill">60s</span></div>
     <div class="tbar"><i id="tbar"></i></div>
     <form id="f" autocomplete="off"><input id="inp" type="text" placeholder="type a thing, press enter…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" aria-label="Name something you saw"><button class="go" aria-label="Submit">↵</button></form>
@@ -25,7 +26,7 @@
     <div id="chal-res" class="chal hidden"></div>
     <div id="tiers" class="tiers"></div><div id="rarest" class="rarest"></div>
     <p id="s-line" class="muted small"></p>
-    <div class="share-row"><button id="btn-share" class="primary">Share result</button><button id="btn-copy" class="ghost">Copy</button></div>
+    <label class="nm" for="nm">Your name on challenge links <span class="muted small">(optional)</span><input id="nm" maxlength="16" autocomplete="nickname" placeholder="e.g. Sam"></label><div class="share-row"><button id="btn-share" class="primary">Share result</button><button id="btn-copy" class="ghost">Copy</button></div>
     <pre id="share" aria-label="Share preview"></pre>
     <h3>What was there <span class="muted small">tap to spot it</span></h3><div id="list"></div>
     <p class="example">ℹ️ Tiers are <b>estimated difficulty</b> (size, placement, contrast) set by us, not real player data yet. Once people play, tiers will come from how many players actually found each thing.</p>

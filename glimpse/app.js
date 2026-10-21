@@ -2,7 +2,7 @@
 const $=id=>document.getElementById(id), Q=new URLSearchParams(location.search);
 const URL_PUBLIC="https://optimusslimes.github.io/floppr/glimpse/";
 const LOOK=+Q.get("look")||10000, TYPE=+Q.get("type")||60000;  // overrides only via query (ms)
-const EPOCH="2026-10-21", KEY="glimpse:v2";
+const EPOCH="2026-10-21", KEY="glimpse:v2", PREVIEW_KEY="glimpse:pv2";
 // ---------- dates (Australia/Sydney) ----------
 const fmt=new Intl.DateTimeFormat("en-CA",{timeZone:"Australia/Sydney",year:"numeric",month:"2-digit",day:"2-digit"});
 function sydDate(d=new Date()){return Q.get("date")||fmt.format(d);}
@@ -25,29 +25,38 @@ for(const [k,d] of Object.entries(S.days)){if(!/^\d{4}-\d\d-\d\d$/.test(k)||!d||
 for(const [k,d] of Object.entries(S.days)){const sc=SCENES.find(x=>x.id===d.scene);if(sc&&typeof d.pts!=="number"){d.pts=ptsFor(sc,d.found.filter(id=>sc.items[id]));d.count=d.found.length;}}
 if(typeof S.settings.music!=="boolean"){S.settings.music=true;S.settings.sfx=true;delete S.settings.sound;}
 S.challenges=S.challenges&&typeof S.challenges==="object"?S.challenges:{};S.v=2;
+for(const [k,v] of Object.entries(S.challenges)){if(typeof v==="number")S.challenges[k]={c:v};else if(!v||typeof v!=="object"||typeof v.c!=="number")delete S.challenges[k];}
+// one-time merge of saves made on the isometric preview page (same origin, separate key)
+try{const pv=JSON.parse(localStorage.getItem(PREVIEW_KEY)||"null");if(pv&&pv.days&&typeof pv.days==="object"){for(const [k,d] of Object.entries(pv.days)){if(!S.days[k]&&/^\d{4}-\d\d-\d\d$/.test(k)&&d&&Array.isArray(d.found)&&d.total>0){const sc=SCENES.find(x=>x.id===d.scene);if(sc){d.found=d.found.filter(id=>sc.items[id]);d.count=d.found.length;d.pts=ptsFor(sc,d.found);d.total=Object.keys(sc.items).length;S.days[k]=d;}}}localStorage.removeItem(PREVIEW_KEY);}}catch{}
+if(typeof S.settings.uid!=="string"||!/^[a-z0-9]{6}$/.test(S.settings.uid))S.settings.uid=Math.random().toString(36).slice(2,8).padEnd(6,"0");
+if(typeof S.settings.name!=="string")S.settings.name="";
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch{}};save();
 // ---------- audio: see audio.js (procedural, original). Default ON after the first tap (Start is the gesture); separate music/sfx toggles, remembered.
 const SFX=new Proxy({},{get:(_,k)=>a=>GAudio.sfx(k,a)});
 const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms);}catch{}};
 // ---------- state ----------
 const today=sydDate(), N=dayNum(today);
-const CH=(()=>{const c=parseInt(Q.get("c"),10),d=parseInt(Q.get("d"),10);if(c>=0&&c<100000&&d>0)return {c,d};return null;})();
-if(CH&&CH.d===dayNum(today)){S.challenges[today]=CH.c;} let SCENE=sceneFor(N), M=GMatch.build(SCENE), practice=false;
+const cleanName=s=>(s||"").replace(/[^\p{L}\p{N} '\-]/gu,"").trim().slice(0,16);
+const CH=(()=>{const c=parseInt(Q.get("c"),10),d=parseInt(Q.get("d"),10);if(c>=0&&c<100000&&d>0)return {c,d,n:cleanName(Q.get("n")),u:(Q.get("u")||"").slice(0,6)};return null;})();
+const SELF=CH&&CH.u&&CH.u===S.settings.uid;
+if(CH&&!SELF&&CH.d===dayNum(today)){S.challenges[today]={c:CH.c,n:CH.n};save();} let SCENE=sceneFor(N), M=GMatch.build(SCENE), practice=false;
 let found=new Set(), entries=[], phase="home", timers=[];
 const clearT=()=>{timers.forEach(t=>{clearTimeout(t);clearInterval(t);cancelAnimationFrame(t);});timers=[];};
-function show(p){["home","type","res"].forEach(x=>$("p-"+x).classList.toggle("hidden",x!==p));}
-function sceneSVG(){return `<svg viewBox="0 0 400 520" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${SCENE.title} scene">${SCENE.svg}</svg>`;}
-function header(){$("dayno").textContent=practice?"practice":"#"+N;$("home-scene").textContent=`${SCENE.emoji} Today: ${SCENE.title} · ${Object.keys(SCENE.items).length} things hidden`;}
+function show(p){["home","look","type","res"].forEach(x=>$("p-"+x).classList.toggle("hidden",x!==p));}
+function sceneSVG(){const [w,h]=SCENE.vb||[400,520];return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${SCENE.title}: an isometric diorama with ${Object.keys(SCENE.items).length} things to remember">${SCENE.svg}</svg>`;}
+function setAR(){const [w,h]=SCENE.vb||[400,520];document.documentElement.style.setProperty("--ar",`${w}/${h}`);document.documentElement.style.setProperty("--arn",(w/h).toFixed(4));}
+function header(){setAR();$("dayno").textContent=practice?"practice":"#"+N;$("home-scene").textContent=`${SCENE.emoji} ${practice?"Practice":"Today"}: ${SCENE.title} · ${Object.keys(SCENE.items).length} things hidden`;$("intro-t").textContent=SCENE.title;$("intro-e").textContent=SCENE.emoji;$("intro-n").textContent=`${Object.keys(SCENE.items).length} things · ${practice?"practice round":"Glimpse #"+N}`;$("intro").dataset.scene=SCENE.id;}
 function cover(on,sub){$("scene").classList.toggle("hidden",on);$("cover").classList.toggle("hidden",!on);if(sub)$("cover-sub").textContent=sub;}
 // ---------- flow ----------
 function home(){phase="home";document.body.className="";header();cover(true,"Ready when you are");show("home");
  const rec=S.days[today];$("home-note").textContent=rec?"":"🎵 Gentle music & sounds play once you start. Mute anytime up top.";
- const ch=S.challenges[today];$("chal").classList.toggle("hidden",ch==null||practice);if(ch!=null)$("chal").innerHTML=`🎯 A friend scored <b>${fmtN(ch)}</b> on today's Glimpse. Beat it!`;
+ const ch=S.challenges[today];$("chal").classList.toggle("hidden",ch==null||practice);if(ch!=null)$("chal").innerHTML=`🎯 ${ch.n?esc(ch.n):"A friend"} scored <b>${fmtN(ch.c)}</b> on today's Glimpse. Beat it!`;
+ if(SELF&&!practice){$("chal").classList.remove("hidden");$("chal").innerHTML="🙂 That's your own challenge link. Send it to a friend to see if they can beat you!";}
  if(CH&&CH.d!==N&&!practice){$("chal").classList.remove("hidden");$("chal").innerHTML=`🎯 That challenge was for Glimpse #${CH.d}. Today's is #${N}, so play it and send yours back.`;}
  if(rec&&!practice){found=new Set(rec.found);entries=rec.entries||[];results(true);}}
 function start(){if(phase!=="home")return;GAudio.unlock();GAudio.setPrefs({music:S.settings.music,sfx:S.settings.sfx});GAudio.phase("count",SCENE.id);phase="count";show("home");$("btn-start").disabled=true;const c=$("count3");cover(true,"Get ready…");c.classList.remove("hidden");let k=3;
  const step=()=>{if(k===0){c.classList.add("hidden");look();return;}c.textContent=k;c.classList.remove("pop");void c.offsetWidth;c.classList.add("pop");SFX.blip(3-k);buzz(10);k--;timers.push(setTimeout(step,700));};step();}
-function look(){phase="look";SFX.go();GAudio.phase("look",SCENE.id);cover(false);$("scene").innerHTML=sceneSVG();$("scene").classList.remove("reveal");const r=$("ring");r.classList.remove("hidden");const t0=performance.now();
+function look(){phase="look";SFX.go();GAudio.phase("look",SCENE.id);cover(false);show("look");$("scene").innerHTML=sceneSVG();$("scene").classList.remove("reveal");$("scene").classList.add("iso-look");const r=$("ring");r.classList.remove("hidden");const t0=performance.now();
  const loop=()=>{const p=Math.min(1,(performance.now()-t0)/LOOK);$("ringp").style.strokeDashoffset=119.4*p;$("ringt").textContent=Math.ceil((1-p)*LOOK/1000);if(p<1)timers.push(requestAnimationFrame(loop));else{r.classList.add("hidden");typing();}};loop();}
 function typing(){phase="type";$("btn-start").disabled=false;document.body.classList.add("typing");$("scene").innerHTML="";cover(true,"What did you see?");show("type");found=new Set();entries=[];$("chips").innerHTML="";$("found-n").textContent="0 found";$("pts-live").textContent="0 pts";
  GAudio.phase("type",SCENE.id);const inp=$("inp");inp.value="";inp.focus({preventScroll:true});setTimeout(()=>window.scrollTo({top:0}),50);
@@ -64,30 +73,37 @@ function finish(){if(phase!=="type")return;clearT();phase="res";document.body.cl
  if(!practice){S.days[today]={scene:SCENE.id,found:[...found],entries,score:found.size,count:found.size,pts:ptsFor(SCENE,[...found]),total:Object.keys(SCENE.items).length,at:Date.now()};save();}
  results(false);}
 function tierCounts(){const c=[0,0,0,0];for(const id of found)c[tierOf(id)]++;return c;}
-function results(instant){phase="res";show("res");header();cover(false);$("scene").innerHTML=sceneSVG();const sc=$("scene");sc.classList.add("reveal");
- const ids=Object.keys(SCENE.items),tot=ids.length;
- ids.forEach((id,i)=>{const g=sc.querySelector("#o-"+id);if(!g)return;if(found.has(id)){g.classList.add("found");g.style.animationDelay=(instant?0:i*45)+"ms";}else g.classList.add("missed");});
+function results(instant){phase="res";show("res");header();const sc=$("scene");const ids=Object.keys(SCENE.items),tot=ids.length;
+ // perf: paint the score panel first, then build the diorama on the next frame (splits one ~110 ms frame on slow phones into two short ones)
+ const paintScene=()=>{if(phase!=="res")return;cover(false);sc.innerHTML=sceneSVG();sc.classList.remove("iso-look");sc.classList.add("reveal");
+ let fi=0;ids.forEach(id=>{const g=sc.querySelector("#o-"+id);if(!g)return;g.setAttribute("tabindex","-1");if(found.has(id)){const k=fi++;g.classList.add("found");g.style.animationDelay=(instant?0:300+k*70)+"ms";if(!instant&&k<12)timers.push(setTimeout(()=>SFX.pop(k),300+k*70));}else g.classList.add("missed");});};
+ if(instant)paintScene();else{cover(true,"Time's up!");timers.push(requestAnimationFrame(()=>timers.push(setTimeout(paintScene,0))));}
  const pts=ptsFor(SCENE,[...found]),cnt=found.size,pct=Math.round(100*cnt/tot),tc=tierCounts();
  if(instant||matchMedia("(prefers-reduced-motion: reduce)").matches){$("s-num").textContent=fmtN(pts);if(!instant)timers.push(setTimeout(()=>afterCount(),50));}else{const t0=performance.now(),D=1400;let lt=0;const tick=()=>{const tn=performance.now(),k=Math.min(1,(tn-t0)/D),e=1-Math.pow(1-k,3);$("s-num").textContent=fmtN(Math.round(pts*e));if(pts&&tn-lt>85&&k<1){lt=tn;SFX.count();}if(k<1)timers.push(requestAnimationFrame(tick));else afterCount();};tick();}
  function afterCount(){[0,1,2,3].forEach(i=>timers.push(setTimeout(()=>SFX.tile(i),120*i)));const r=[...found].reduce((m,id)=>Math.max(m,tierOf(id)),-1);if(r>=2)timers.push(setTimeout(()=>SFX.fanfare(),600));}
- if(!instant)GAudio.phase("res",SCENE.id);
+ if(!instant)timers.push(setTimeout(()=>GAudio.phase("res",SCENE.id),120));
  $("s-sub").textContent=`${cnt}/${tot} found · ${pct}% of the scene`;
- $("tiers").innerHTML=TIERS.map((T,i)=>`<div class="tier t${i}"><span>${T.e}</span><b>${tc[i]}</b><small>${T.n}<br>+${T.p} each</small></div>`).slice().reverse().join("");
+ const paintPanel=()=>{ $("tiers").innerHTML=TIERS.map((T,i)=>`<div class="tier t${i}"><span>${T.e}</span><b>${tc[i]}</b><small>${T.n}<br>+${T.p} each</small></div>`).slice().reverse().join("");
  const rarest=[...found].sort((a,b)=>tierOf(b)-tierOf(a)||(SCENE.items[a].label<SCENE.items[b].label?-1:1))[0];
  $("rarest").innerHTML=rarest?`<span class="muted small">Rarest find</span><b>${TIERS[tierOf(rarest)].e} ${SCENE.items[rarest].label}</b><span class="pill">${TIERS[tierOf(rarest)].n} · +${TIERS[tierOf(rarest)].p}</span>`:`<span class="muted">No finds this time. Tomorrow's a new picture!</span>`;
- const ch=practice?null:S.challenges[today];$("chal-res").classList.toggle("hidden",ch==null);
- if(ch!=null){$("chal-res").innerHTML=pts>ch?`🏆 You beat your friend's <b>${fmtN(ch)}</b> by ${fmtN(pts-ch)}!`:pts===ch?`🤝 Dead heat with your friend's <b>${fmtN(ch)}</b>!`:`😅 ${fmtN(ch-pts)} short of your friend's <b>${fmtN(ch)}</b>. Send it to someone else?`;}
+ const chv=practice?null:S.challenges[today];$("chal-res").classList.toggle("hidden",chv==null);
+ if(chv!=null){const ch=chv.c,who=chv.n?esc(chv.n)+"'s":"your friend's";$("chal-res").innerHTML=pts>ch?`🏆 You beat ${who} <b>${fmtN(ch)}</b> by ${fmtN(pts-ch)}!`:pts===ch?`🤝 Dead heat with ${who} <b>${fmtN(ch)}</b>!`:`😅 ${fmtN(ch-pts)} short of ${who} <b>${fmtN(ch)}</b>. Send it to someone else?`;}
  $("s-line").textContent=`${SCENE.emoji} ${SCENE.title}`+(practice?" · practice":"")+(S.days[today]&&!practice?` · 🔥 ${streak()} day streak`:"");
- $("share").textContent=shareText();
- $("list").innerHTML=ids.slice().sort((a,b)=>(found.has(b)-found.has(a))||tierOf(b)-tierOf(a)).map(id=>{const f=found.has(id),t=tierOf(id);return `<button data-id="${id}" class="${f?"":"miss"}" aria-label="${SCENE.items[id].label}, ${TIERS[t].n}, ${f?"found":"missed"}. Show in picture"><span>${f?"✅":"▫️"} ${SCENE.items[id].label}</span><span class="pc">${TIERS[t].e} ${f?"+"+TIERS[t].p:TIERS[t].n}</span></button>`;}).join("");
+ $("share").textContent=shareText();};
+ if(instant)paintPanel();else timers.push(setTimeout(paintPanel,90));
+ const renderList=()=>{$("list").innerHTML=ids.slice().sort((a,b)=>(found.has(b)-found.has(a))||tierOf(b)-tierOf(a)).map(id=>{const f=found.has(id),t=tierOf(id);return `<button data-id="${id}" class="${f?"":"miss"}" aria-label="${SCENE.items[id].label}, ${TIERS[t].n}, ${f?"found":"missed"}. Show in picture"><span>${f?"✅":"▫️"} ${SCENE.items[id].label}</span><span class="pc">${TIERS[t].e} ${f?"+"+TIERS[t].p:TIERS[t].n}</span></button>`;}).join("");};
+ // perf: the long list + review are below the fold; build them after the reveal frame so the first results paint stays light
+ const renderRest=()=>{renderList();
  // near-miss review
  const misses=[];for(const e of entries){if(e.r.length===1&&e.r[0]==="none"){const s=M.suggest(e.t);if(s&&!found.has(s))misses.push([e.t,s]);}}
  $("review").innerHTML=misses.length?`<h3>So close</h3>`+misses.slice(0,5).map(([t,s])=>`<div class="rv">You typed “${esc(t)}”. Did you mean <b>${SCENE.items[s].label}</b>? <span class="muted small">(no points, but we're learning names)</span></div>`).join(""):"";
- demoButtons();countdown();}
+ $("nm").value=S.settings.name;demoButtons();};
+ if(instant)renderRest();else{$("list").innerHTML="";$("review").innerHTML="";timers.push(setTimeout(renderRest,650));}
+ countdown();}
 const esc=s=>s.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function shareText(){const ids=Object.keys(SCENE.items),pts=ptsFor(SCENE,[...found]),tc=tierCounts(),pct=Math.round(100*found.size/ids.length);
  const bits=[tc[3]?`💎${tc[3]}`:"",tc[2]?`✨${tc[2]}`:""].filter(Boolean).join(" ");const st=!practice&&S.days[today]?streak():0;
- const link=practice?URL_PUBLIC:`${URL_PUBLIC}?c=${pts}&d=${N}`;
+ const nm=cleanName(S.settings.name);const link=practice?URL_PUBLIC:`${URL_PUBLIC}?c=${pts}&d=${N}&u=${S.settings.uid}${nm?"&n="+encodeURIComponent(nm):""}`;
  return `Glimpse ${practice?"(practice)":"#"+N} 👁️ ${fmtN(pts)} pts · ${found.size}/${ids.length} (${pct}%)${bits?" · "+bits:""}${st>1?` · 🔥${st}`:""}\n${practice?"":"Can you beat me? "}${link}`;}
 function streak(){let n=0,d=Date.parse(today+"T00:00:00Z");while(S.days[new Date(d).toISOString().slice(0,10)]){n++;d-=864e5;}return n;}
 function stats(){const ks=Object.keys(S.days).sort(),ds=ks.map(k=>S.days[k]),played=ds.length;const best=played?Math.max(...ds.map(d=>d.pts||0)):0,avg=played?Math.round(ds.reduce((a,d)=>a+(d.pts||0),0)/played):0;
@@ -102,7 +118,8 @@ async function copy(t){try{await navigator.clipboard.writeText(t);toast("Copied!
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),1800);}
 // ---------- wiring ----------
 $("btn-start").onclick=start;$("btn-done").onclick=finish;$("btn-help").onclick=()=>$("d-help").showModal();$("btn-stats").onclick=stats;
-$("btn-share").onclick=()=>{SFX.click();share();};$("btn-copy").onclick=()=>copy($("share").textContent);
+$("btn-share").onclick=()=>{SFX.click();share();};
+$("nm").addEventListener("input",()=>{S.settings.name=cleanName($("nm").value);save();$("share").textContent=shareText();});$("btn-copy").onclick=()=>copy($("share").textContent);
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
 $("d-help").addEventListener("close",()=>{S.settings.seenHelp=true;save();});
 const snd=()=>{const m=S.settings.music,f=S.settings.sfx;$("btn-music").textContent="🎵";$("btn-music").classList.toggle("off",!m);$("btn-music").setAttribute("aria-pressed",m);$("btn-music").setAttribute("aria-label","Music and ambience "+(m?"on":"off"));
@@ -116,4 +133,5 @@ if(window.visualViewport)visualViewport.addEventListener("resize",()=>{if(phase=
 window.__glimpse={finish,submit,state:()=>({phase,found:[...found],scene:SCENE.id,N,today})};
 document.addEventListener("pointerdown",()=>{if(!GAudio.running()){GAudio.unlock();GAudio.setPrefs({music:S.settings.music,sfx:S.settings.sfx});if(phase==="home"||phase==="res")GAudio.phase(phase,SCENE.id);}},{once:false,passive:true});
 home();if(!S.settings.seenHelp&&!S.days[today])$("d-help").showModal();
+if(SELF)setTimeout(()=>toast("That's your own challenge link 🙂 Send it to a friend!"),400);
 })();

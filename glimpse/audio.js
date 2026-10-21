@@ -66,7 +66,9 @@ const S={
  dup:()=>{const t=now();osc("square",1800,t,.025,.02,sfxBus,{filt:3000});},
  timeup:()=>{const t=now();const n=noise(t,.7,.09,sfxBus,{type:"bandpass",f:400,q:1.5,a:.25});n.fl.frequency.exponentialRampToValueAtTime(3000,t+.8);osc("sine",392,t+.5,.6,.06,sfxBus,{a:.02});},
  count:()=>{const t=now();osc("sine",1400+Math.random()*200,t,.03,.025,sfxBus);},
- tile:(i=0)=>{const t=now();osc("triangle",[523,659,784,1047][i],t,.18,.06,sfxBus);},
+ tile:(i=0)=>{const t=now();const f=[523,659,784,1047][i]||1047;osc("sine",f,t,.22,.07,sfxBus,{a:.002});osc("sine",f*3.98,t,.05,.015,sfxBus,{a:.001});noise(t,.02,.02,sfxBus,{type:"bandpass",f:f*2,q:4,a:.001});},
+ // toy-block "pop" for items rising out of the diorama on the results screen (woody marimba-ish knock, pentatonic climb)
+ pop:(i=0)=>{const t=now();const f=[587,659,740,880,988,1175,1319,1480][i%8];const o=osc("sine",f*1.5,t,.09,.05,sfxBus,{a:.002});o.frequency.exponentialRampToValueAtTime(f,t+.05);osc("sine",f*4,t,.03,.01,sfxBus,{a:.001});},
  fanfare:()=>{const t=now();[[523,659,784],[587,740,880],[659,831,988,1319]].forEach((c,i)=>c.forEach(f=>osc("triangle",f,t+i*.14,i===2?.7:.16,.04,sfxBus,{detune:i===2?3:0})));},
  click:()=>{const t=now();osc("sine",1000,t,.04,.06,sfxBus);osc("sine",1500,t+.03,.05,.04,sfxBus);},
  tick:()=>{const t=now();osc("sine",2000,t,.03,.03,sfxBus);}

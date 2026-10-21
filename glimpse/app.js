@@ -22,13 +22,13 @@ const TIERS=[{n:"Common",e:"⚪",p:50},{n:"Uncommon",e:"🔷",p:80},{n:"Rare",e:
 const RARITY={source:"estimate",tier:(scene,id)=>{const d=scene.items[id]&&scene.items[id].diff;return d>=0&&d<=3?d:0;}};
 const tierIn=(sc,id)=>RARITY.tier(sc,id);
 function ptsFor(sc,ids){return ids.reduce((a,id)=>a+TIERS[RARITY.tier(sc,id)].p,0);}
-const fmtN=n=>n.toLocaleString("en-AU");
+const fmtN=n=>(+n||0).toLocaleString("en-AU");
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 // ---------- storage (corruption-safe, v3 = multi-world days; v2 single-scene days migrated in place) ----------
 function fresh(){return {v:3,days:{},settings:{music:true,sfx:true,seenHelp:false}};}
 let S;try{S=JSON.parse(localStorage.getItem(KEY)||"null");if(!S||typeof S!=="object"||!(S.v===2||S.v===3)||!S.days||typeof S.days!=="object"||Array.isArray(S.days)||!S.settings||typeof S.settings!=="object")throw 0;}catch(e){try{const raw=localStorage.getItem(KEY);if(raw)localStorage.setItem(KEY+":corrupt",raw);}catch{}S=fresh();}
 function cleanWorld(w){const sc=w&&SC(w.scene);if(!sc||!Array.isArray(w.found))return null;const found=[...new Set(w.found.filter(id=>sc.items[id]))];return {scene:sc.id,found,entries:Array.isArray(w.entries)?w.entries.slice(0,200):[],pts:ptsFor(sc,found),count:found.length,total:Object.keys(sc.items).length,done:w.done!==false};}
-function legacyDay(d){const w=cleanWorld({...d,done:true});return w?{legacy:true,run:[w.scene],w:[w],done:true}:null;}
+function legacyDay(d){const w=cleanWorld({...d,done:true});return w?tally({legacy:true,run:[w.scene],w:[w],done:true}):null;}
 function tally(d){d.pts=d.w.reduce((a,w)=>a+w.pts,0);d.count=d.w.reduce((a,w)=>a+w.count,0);d.total=d.w.reduce((a,w)=>a+w.total,0);return d;}
 function cleanDay(k,d){if(!/^\d{4}-\d\d-\d\d$/.test(k)||!d||typeof d!=="object")return null;
  if(!Array.isArray(d.w)){return Array.isArray(d.found)?legacyDay(d):null;}
@@ -46,6 +46,7 @@ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch{}};
 const today=sydDate(), N=dayNum(today), RUN=runFor(N), BONUS=bonusFor(N,RUN);
 // resume: a world that was started but not finished (tab closed/reloaded) is locked with what was found so far; no replays
 const DAY=()=>S.days[today];
+if(DAY()&&DAY().legacy){S.legacyToday=DAY();delete S.days[today];}
 if(DAY()&&!DAY().legacy){const d=DAY();d.w.forEach(w=>w.done=true);d.done=d.w.length>=WORLDS;if(d.bonus)d.bonus.done=true;tally(d);}
 save();
 const SFX=new Proxy({},{get:(_,k)=>a=>GAudio.sfx(k,a)});

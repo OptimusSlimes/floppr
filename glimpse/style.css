@@ -189,3 +189,10 @@ h1 em{color:#b0600a}.kicker{color:#1f7a64}.hero .lbl{color:#a8650a}.ptslive{colo
 @media(max-width:360px){.h-logo{font-size:42px}.mystery{transform:scale(.85)}#h-stats b{font-size:17px}}
 #toast:not(.on){opacity:0}
 body.hurry #t-left{background:#c43c4a!important;color:#fff!important}
+
+/* v7: countdown is a badge under the title, not a veil over it */
+#count3{inset:auto;left:50%;bottom:9%;transform:translateX(-50%);width:92px;height:92px;border-radius:50%;font-size:56px;background:#7a5fc0;color:#fff;text-shadow:0 3px 0 #4a3a8a;box-shadow:0 5px 0 #4a3a8a}
+#count3.pop{animation:pop2 .7s ease-out}@keyframes pop2{from{transform:translateX(-50%) scale(1.4);opacity:.2}to{transform:translateX(-50%) scale(1);opacity:1}}
+.h-sub{margin:-4px 0 0}
+#errbar{position:fixed;left:10px;right:10px;bottom:12px;z-index:20;background:#3d3354;color:#fff;border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;justify-content:space-between;box-shadow:0 4px 0 #1f1a2e}#errbar button{background:#ffd23f;border:0;border-radius:10px;padding:8px 12px;font:inherit;font-weight:700;color:#3d3354}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}

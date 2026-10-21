@@ -33,6 +33,7 @@ function build(scene){
   function one(raw){
     const raw0=words(raw).filter(w=>!STOP.has(w)&&!/^\d+$/.test(w)); const full=raw0.map(sing).join(" ");
     if(INDEX.has(full)) return {status:"match",item:INDEX.get(full),how:"alias"};
+    if(DEC.has(full)) return {status:"none",how:"decoy"};
     const rc=raw0.join(""); if(rc.length>3&&INDEX.has(rc)) return {status:"match",item:INDEX.get(rc),how:"alias"};
     if(rc.length>3&&INDEX.has(sing(rc))) return {status:"match",item:INDEX.get(sing(rc)),how:"alias"};
     const ws=raw0.length>1?raw0.filter(w=>!(w.length>5&&/ing$/.test(w)&&!INDEX.has(w))):raw0;  // drop verbs: "kites flying"

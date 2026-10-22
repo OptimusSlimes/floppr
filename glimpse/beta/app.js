@@ -9,8 +9,14 @@ const NOSUBMIT=!GS||Q.has("date")||((LOOKQ||TYPEQ)&&!BETA); // test overrides ne
 try{GS&&GS.init({api:Q.get("noapi")?null:API,ns:BETA?"beta":null});}catch(e){}
 let STATS=null,STATS_T=0;
 function loadStats(force){if(!GS)return Promise.resolve(null);if(!force&&STATS&&Date.now()-STATS_T<60000)return Promise.resolve(STATS);
- return GS.stats(sydDate()).then(s=>{if(s){STATS=s;STATS_T=Date.now();}return s||STATS;}).catch(()=>STATS);}
-function submitScore(sceneId,found,score){if(NOSUBMIT)return Promise.resolve(null);try{return GS.submit({day:sydDate(),sceneId,found,score}).catch(()=>null);}catch(e){return Promise.resolve(null);}}
+ return GS.stats(today).then(s=>{if(s){STATS=s;STATS_T=Date.now();}return s||STATS;}).catch(()=>STATS);}
+function submitScore(sceneId,found,score){if(NOSUBMIT)return Promise.resolve(null);try{return GS.submit({day:today,sceneId,found,score}).catch(()=>null);}catch(e){return Promise.resolve(null);}}
+function syncScores(){const d=S.days[today];if(!d||d.legacy||NOSUBMIT)return;const sent=S.sent&&S.sent.day===today?S.sent:(S.sent={day:today,ids:[]});const jobs=[];
+ const add=(id,found,pts)=>{if(sent.ids.includes(id))return;sent.ids.push(id);jobs.push(()=>submitScore(id,found,pts));};
+ d.w.forEach(w=>{if(w&&w.done){const sc=SC(w.scene);if(sc)add(sc.id,w.found,ptsFor(sc,w.found));}});
+ if(d.bonus&&d.bonus.done){const sc=SC(d.bonus.scene);if(sc)add("bonus."+sc.id,d.bonus.found,ptsFor(sc,d.bonus.found));}
+ if(d.done)add("total",[],d.pts);if(!jobs.length)return;save();
+ jobs.reduce((p,j)=>p.then(j),Promise.resolve()).then(()=>loadStats(true)).then(()=>{if(phase==="inter")interPct();else if(phase==="res")curve();});}
 const sid=(mode,sc)=>mode==="bonus"?"bonus."+sc.id:sc.id;
 // Real rarity: only shown when 30+ players have played that scene today. Points always use the estimated tier so scores stay comparable all day.
 function realR(sc,id,m){const r=GS&&STATS?GS.rarity(STATS,sid(m||"core",sc),id,null):null;if(!r||r.source!=="players")return null;return {t:TIERS.findIndex(T=>T.n===r.tier),share:r.share};}
@@ -109,7 +115,7 @@ function startWorld(fixed){clearT();GAudio.unlock();GAudio.setPrefs({music:S.set
  const step=()=>{if(k===0){c.classList.add("hidden");look();return;}c.classList.remove("hidden");c.textContent=k;c.classList.remove("pop");void c.offsetWidth;c.classList.add("pop");SFX.blip(3-k);buzz(10);k--;timers.push(setTimeout(step,700));};timers.push(setTimeout(step,wi>0||mode!=="core"?650:300));}
 function lockWorld(done){if(mode==="practice")return;const d=S.days[today]||(S.days[today]={run:RUN,gen:"v7",w:[],done:false});const w={scene:SCENE.id,gen:"v7",found:[...found],entries,done};const cw=cleanWorld(w,true);cw.done=done;
  if(mode==="bonus")d.bonus=cw;else d.w[wi]=cw;const wasDone=d.done;d.done=d.w.length>=WORLDS&&d.w.every(x=>x.done);tally(d);save();
- if(done){submitScore(sid(mode,SCENE),cw.found,ptsFor(SCENE,cw.found)).then(()=>{if(mode!=="bonus"&&d.done&&!wasDone)return submitScore("total",[],d.pts);}).then(()=>loadStats(true)).then(()=>{if(phase==="inter")interPct();else if(phase==="res")curve();});}}
+ if(done)syncScores();}
 function look(){phase="look";SFX.go();GAudio.phase("look",SCENE.id);lockWorld(false);cover(false);show("look");$("scene").innerHTML=sceneSVG(SCENE);$("scene").dataset.k=sceneKey(SCENE);$("scene").classList.remove("reveal");$("scene").classList.add("iso-look");const r=$("ring");r.classList.remove("hidden");const t0=performance.now(),L=lookMs();
  const loop=()=>{const p=Math.min(1,(performance.now()-t0)/L);$("ringp").style.strokeDashoffset=119.4*p;$("ringt").textContent=Math.ceil((1-p)*L/1000);if(p<1)timers.push(requestAnimationFrame(loop));else{r.classList.add("hidden");typing();}};loop();}
 function typing(){phase="type";document.body.classList.add("typing");cover(true,"What did you see?");show("type");$("chips").innerHTML="";$("found-n").textContent="0 found";$("pts-live").textContent="0 pts";
@@ -170,7 +176,7 @@ function interstitial(){phase="inter";show("inter");header();pips($("i-pips"));c
 function interPct(){const sc=SCENE,el=$("i-pct");const d=DAY(),w=mode==="bonus"?d&&d.bonus:d&&d.w[wi];const p=GS&&STATS&&w?GS.percentile(STATS,sid(mode,sc),ptsFor(sc,w.found)):null;
  if(p===null){el.classList.add("hidden");return;}const n=STATS.scenes[sid(mode,sc)].players;el.innerHTML=`📊 You beat <b>${p}%</b> of players on this scene <span class="muted small">(${fmtN(n)} played)</span>`;el.classList.remove("hidden");
  if($("i-list").firstChild)$("i-list").innerHTML=listHTML(sc,new Set(w.found));}
-function next(){if(mode==="core"&&wi<WORLDS-1){wi++;startWorld();return;}if(mode==="practice"){home();return;}finalResults(false);}
+function next(){if(phase!=="inter")return;if(mode==="core"&&wi<WORLDS-1){wi++;startWorld();return;}if(mode==="practice"){home();return;}finalResults(false);}
 // ---------- final results ----------
 function curve(){const el=$("curve"),d=DAY();const h=GS&&STATS&&d&&!d.legacy?GS.curve(STATS,"total"):null;if(!h||!d.done){el.classList.add("hidden");return;}
  const p=GS.percentile(STATS,"total",d.pts),n=STATS.scenes.total.players,bs=h.binSize;
@@ -270,5 +276,9 @@ if(window.visualViewport)visualViewport.addEventListener("resize",()=>{if(phase=
 window.__glimpse={finish,submit,next,play,home,state:()=>({phase,mode,wi,found:[...found],scene:SCENE.id,N,today,run:RUN,bonus:BONUS,day:DAY()||null})};
 document.addEventListener("pointerdown",()=>{if(!GAudio.running()){GAudio.unlock();GAudio.setPrefs({music:S.settings.music,sfx:S.settings.sfx});if(phase==="home"||phase==="res"||phase==="inter")GAudio.phase(phase==="inter"?"res":phase,SCENE.id);}},{passive:true});
 home();if(!S.settings.seenHelp&&!DAY())$("d-help").showModal();
+syncScores();
+// came back to an old tab after Sydney midnight: reload into the new day unless mid-scene
+const stale=()=>{if(!Q.get("date")&&sydDate()!==today&&!["count","look","type"].includes(phase))location.reload();};
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)stale();});addEventListener("focus",stale);
 if(SELF)setTimeout(()=>toast("That's your own challenge link 🙂 Send it to a friend!"),400);
 })();

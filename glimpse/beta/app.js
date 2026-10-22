@@ -3,6 +3,17 @@ const $=id=>document.getElementById(id), Q=new URLSearchParams(location.search);
 const URL_PUBLIC="https://optimusslimes.github.io/floppr/glimpse/";
 const LOOKQ=+Q.get("look")||0, TYPEQ=+Q.get("type")||0;  // test overrides only (ms)
 const EPOCH="2026-10-21", KEY=/\/beta\//.test(location.pathname)?"glimpse:beta":"glimpse:v2", PREVIEW_KEY="glimpse:pv2", WORLDS=3;
+const BETA=/\/beta\//.test(location.pathname);
+const API="https://glimpse-scores.glimpsegame.workers.dev", GS=window.GlimpseScores;
+const NOSUBMIT=!GS||Q.has("date")||((LOOKQ||TYPEQ)&&!BETA); // test overrides never write live data
+try{GS&&GS.init({api:Q.get("noapi")?null:API,ns:BETA?"beta":null});}catch(e){}
+let STATS=null,STATS_T=0;
+function loadStats(force){if(!GS)return Promise.resolve(null);if(!force&&STATS&&Date.now()-STATS_T<60000)return Promise.resolve(STATS);
+ return GS.stats(sydDate()).then(s=>{if(s){STATS=s;STATS_T=Date.now();}return s||STATS;}).catch(()=>STATS);}
+function submitScore(sceneId,found,score){if(NOSUBMIT)return Promise.resolve(null);try{return GS.submit({day:sydDate(),sceneId,found,score}).catch(()=>null);}catch(e){return Promise.resolve(null);}}
+const sid=(mode,sc)=>mode==="bonus"?"bonus."+sc.id:sc.id;
+// Real rarity: only shown when 30+ players have played that scene today. Points always use the estimated tier so scores stay comparable all day.
+function realR(sc,id,m){const r=GS&&STATS?GS.rarity(STATS,sid(m||"core",sc),id,null):null;if(!r||r.source!=="players")return null;return {t:TIERS.findIndex(T=>T.n===r.tier),share:r.share};}
 const LOOKS=[10000,10000,8000], BONUS_LOOK=7000, BONUS_TYPE=45000;
 // ---------- dates (Australia/Sydney) ----------
 const fmt=new Intl.DateTimeFormat("en-CA",{timeZone:"Australia/Sydney",year:"numeric",month:"2-digit",day:"2-digit"});
@@ -97,7 +108,8 @@ function startWorld(fixed){clearT();GAudio.unlock();GAudio.setPrefs({music:S.set
  phase="count";GAudio.phase("count",SCENE.id);const c=$("count3");let k=3;
  const step=()=>{if(k===0){c.classList.add("hidden");look();return;}c.classList.remove("hidden");c.textContent=k;c.classList.remove("pop");void c.offsetWidth;c.classList.add("pop");SFX.blip(3-k);buzz(10);k--;timers.push(setTimeout(step,700));};timers.push(setTimeout(step,wi>0||mode!=="core"?650:300));}
 function lockWorld(done){if(mode==="practice")return;const d=S.days[today]||(S.days[today]={run:RUN,gen:"v7",w:[],done:false});const w={scene:SCENE.id,gen:"v7",found:[...found],entries,done};const cw=cleanWorld(w,true);cw.done=done;
- if(mode==="bonus")d.bonus=cw;else d.w[wi]=cw;d.done=d.w.length>=WORLDS&&d.w.every(x=>x.done);tally(d);save();}
+ if(mode==="bonus")d.bonus=cw;else d.w[wi]=cw;const wasDone=d.done;d.done=d.w.length>=WORLDS&&d.w.every(x=>x.done);tally(d);save();
+ if(done){submitScore(sid(mode,SCENE),cw.found,ptsFor(SCENE,cw.found)).then(()=>{if(mode!=="bonus"&&d.done&&!wasDone)return submitScore("total",[],d.pts);}).then(()=>loadStats(true)).then(()=>{if(phase==="inter")interPct();else if(phase==="res")curve();});}}
 function look(){phase="look";SFX.go();GAudio.phase("look",SCENE.id);lockWorld(false);cover(false);show("look");$("scene").innerHTML=sceneSVG(SCENE);$("scene").dataset.k=sceneKey(SCENE);$("scene").classList.remove("reveal");$("scene").classList.add("iso-look");const r=$("ring");r.classList.remove("hidden");const t0=performance.now(),L=lookMs();
  const loop=()=>{const p=Math.min(1,(performance.now()-t0)/L);$("ringp").style.strokeDashoffset=119.4*p;$("ringt").textContent=Math.ceil((1-p)*L/1000);if(p<1)timers.push(requestAnimationFrame(loop));else{r.classList.add("hidden");typing();}};loop();}
 function typing(){phase="type";document.body.classList.add("typing");cover(true,"What did you see?");show("type");$("chips").innerHTML="";$("found-n").textContent="0 found";$("pts-live").textContent="0 pts";
@@ -122,20 +134,26 @@ function marks(sc,fs,instant){const el=$("scene");let m=$("marks");if(m)m.remove
  m=document.createElement("div");m.id="marks";m.className="marks"+(instant?" now":"");const miss=Object.keys(sc.items).filter(id=>!fs.has(id));
  const pts=[];for(const id of Object.keys(sc.items)){const g=svg.querySelector("#o-"+id);if(!g)continue;let b;try{b=g.getBBox();}catch(e){continue;}if(!b.width)continue;
   let x=(b.x+b.width/2)/W*100,y=(b.y+b.height*.4)/H*100;for(const p of pts){if(Math.abs(p[0]-x)<4.5&&Math.abs(p[1]-y)<4){y+=4;}}pts.push([x,y]);
-  const f=fs.has(id),t=tierIn(sc,id);const k=document.createElement("button");k.type="button";k.className="mk "+(f?"mf":"mm");k.dataset.id=id;k.style.left=x+"%";k.style.top=y+"%";
-  k.innerHTML=`<i>${f?"✓":"?"}</i><span class="tip">${esc(sc.items[id].label)}<em> · ${TIERS[t].e} ${TIERS[t].n}</em></span>`;k.setAttribute("aria-label",`${sc.items[id].label}, ${TIERS[t].n} (estimated), ${f?"found":"missed"}`);
+  const f=fs.has(id),R=realR(sc,id,sc===SCENE?mode:"core"),t=R?R.t:tierIn(sc,id);const k=document.createElement("button");k.type="button";k.className="mk "+(f?"mf":"mm");k.dataset.id=id;k.style.left=x+"%";k.style.top=y+"%";
+  k.innerHTML=`<i>${f?"✓":"?"}</i><span class="tip">${esc(sc.items[id].label)}<em> · ${TIERS[t].e} ${TIERS[t].n}</em></span>`;k.setAttribute("aria-label",`${sc.items[id].label}, ${TIERS[t].n}${R?"":" (estimated)"}, ${f?"found":"missed"}`);
   if(!instant)k.style.animationDelay=(700+pts.length*25)+"ms";m.appendChild(k);}
  const bar=document.createElement("div");bar.className="mbar";bar.innerHTML=`<button type="button" class="mb-names" aria-pressed="false">Show missed names (${miss.length})</button><button type="button" class="mb-hide">Hide marks</button>`;m.appendChild(bar);
  el.appendChild(m);}
+// "Show missed names": each label sits above its ?; if it collides it flips below; if that collides too, only the ? shows until tapped.
+function layoutNames(m){const box=m.getBoundingClientRect(),placed=[],hit=(r)=>r.left<box.left-2||r.right>box.right+2||r.top<box.top-2||r.bottom>box.bottom+2||placed.some(p=>r.left<p.right+2&&r.right>p.left-2&&r.top<p.bottom+1&&r.bottom>p.top-1);
+ const ks=[...m.querySelectorAll(".mk")];ks.forEach(k=>{k.classList.remove("below","nolab");const i=k.querySelector("i").getBoundingClientRect();placed.push(i);});
+ for(const k of ks.filter(k=>k.classList.contains("mm"))){const tip=k.querySelector(".tip");let r=tip.getBoundingClientRect();if(!hit(r)){placed.push(r);continue;}
+  k.classList.add("below");r=tip.getBoundingClientRect();if(!hit(r)){placed.push(r);continue;}k.classList.remove("below");k.classList.add("nolab");}}
+addEventListener("resize",()=>{const m=$("marks");if(m&&m.classList.contains("names"))layoutNames(m);});
 function markTap(e){const m=$("marks");if(!m)return;const k=e.target.closest(".mk");if(k){e.stopPropagation();const on=!k.classList.contains("open");m.querySelectorAll(".mk.open").forEach(x=>x.classList.remove("open"));k.classList.toggle("open",on);
   if(on){const g=$("scene").querySelector("#o-"+k.dataset.id);if(g){g.classList.remove("spot");void g.getBoundingClientRect();g.classList.add("spot");}}return;}
- if(e.target.closest(".mb-names")){const b=e.target.closest(".mb-names"),on=!m.classList.contains("names");m.classList.toggle("names",on);b.setAttribute("aria-pressed",on);b.textContent=on?"Hide names":`Show missed names (${m.querySelectorAll(".mm").length})`;return;}
+ if(e.target.closest(".mb-names")){const b=e.target.closest(".mb-names"),on=!m.classList.contains("names");m.classList.toggle("names",on);if(on)layoutNames(m);b.setAttribute("aria-pressed",on);b.textContent=on?"Hide names":`Show missed names (${m.querySelectorAll(".mm").length})`;return;}
  if(e.target.closest(".mb-hide")){const on=!m.classList.contains("off");m.classList.toggle("off",on);e.target.textContent=on?"Show marks":"Hide marks";return;}}
 function countUp(el,to,cb){if(RM()){el.textContent=fmtN(to);cb&&timers.push(setTimeout(cb,50));return;}const t0=performance.now(),D=1200;let lt=0;const tick=()=>{const tn=performance.now(),k=Math.min(1,(tn-t0)/D),e=1-Math.pow(1-k,3);el.textContent=fmtN(Math.round(to*e));if(to&&tn-lt>85&&k<1){lt=tn;SFX.count();}if(k<1)timers.push(requestAnimationFrame(tick));else cb&&cb();};tick();}
 function rarestOf(sc,fs){return [...fs].sort((a,b)=>tierIn(sc,b)-tierIn(sc,a)||(sc.items[a].label<sc.items[b].label?-1:1))[0];}
 function listHTML(sc,fs){const ids=Object.keys(sc.items),mi=ids.filter(i=>!fs.has(i)),fo=ids.filter(i=>fs.has(i));const by=(a,b)=>tierIn(sc,b)-tierIn(sc,a);
  return (mi.length?`<h4 class="lh">You missed these (${mi.length})</h4>`+rowsHTML(sc,fs,mi.sort(by)):"")+(fo.length?`<h4 class="lh">You found (${fo.length})</h4>`+rowsHTML(sc,fs,fo.sort(by)):"");}
-function rowsHTML(sc,fs,ids){return ids.map(id=>{const f=fs.has(id),t=tierIn(sc,id);return `<button data-id="${id}" class="${f?"":"miss"}" aria-label="${esc(sc.items[id].label)}, ${TIERS[t].n}, ${f?"found":"missed"}. Show in picture"><span>${f?"✅":"❓"} ${esc(sc.items[id].label)}</span><span class="pc">${TIERS[t].e} ${TIERS[t].n}${f?" +"+TIERS[t].p:""}</span></button>`;}).join("");}
+function rowsHTML(sc,fs,ids){const m=sc===SCENE?mode:"core";return ids.map(id=>{const f=fs.has(id),t=tierIn(sc,id),R=realR(sc,id,m),dt=R?R.t:t,lab=R?`${TIERS[dt].e} ${TIERS[dt].n} · ${Math.round(R.share*100)}% found it`:`${TIERS[t].e} ${TIERS[t].n} (est.)`;return `<button data-id="${id}" class="${f?"":"miss"}" aria-label="${esc(sc.items[id].label)}, ${R?TIERS[dt].n+", "+Math.round(R.share*100)+" percent of players found it":TIERS[t].n+" (estimated)"}, ${f?"found":"missed"}. Show in picture"><span>${f?"✅":"❓"} ${esc(sc.items[id].label)}</span><span class="pc">${lab}${f?" +"+TIERS[t].p:""}</span></button>`;}).join("");}
 function interstitial(){phase="inter";show("inter");header();pips($("i-pips"));const sc=SCENE,fs=new Set(found),tot=Object.keys(sc.items).length,pts=ptsFor(sc,[...fs]);
  cover(true,"Time's up!");timers.push(requestAnimationFrame(()=>timers.push(setTimeout(()=>{if(phase==="inter")paintReveal(sc,fs,false);},0))));
  $("i-kick").textContent=(mode==="core"?`Scene ${wi+1}`:mode==="bonus"?"Bonus scene":"Practice")+` · ${sc.emoji} ${sc.title}`;
@@ -146,10 +164,27 @@ function interstitial(){phase="inter";show("inter");header();pips($("i-pips"));c
  const last=mode!=="core"||wi>=WORLDS-1;$("btn-next").textContent=mode==="core"?(last?"See today's total →":`Next scene → (${wi+2} of ${WORLDS})`):"See result →";$("btn-skip").textContent=last?"Skip →":"Skip to next →";
  const d=DAY();$("i-run").textContent=mode==="core"&&d?`Running total: ${fmtN(d.pts)} pts`:mode==="bonus"?"Your bonus score is extra. It doesn't change your daily score.":"Practice: not saved.";
  if(mode==="core"&&wi<WORLDS-1)timers.push(setTimeout(()=>prefetch([RUN[wi+1]]),1600));else if(mode==="core"&&!(DAY()&&DAY().bonus))timers.push(setTimeout(()=>prefetch([BONUS]),2500));
+ $("i-pct").classList.add("hidden");loadStats().then(()=>{if(phase==="inter"&&SCENE===sc)interPct();});
  $("i-list").innerHTML="";timers.push(setTimeout(()=>{$("i-list").innerHTML=listHTML(sc,fs);},650));
  setTimeout(()=>$("btn-next").focus({preventScroll:true}),400);}
+function interPct(){const sc=SCENE,el=$("i-pct");const d=DAY(),w=mode==="bonus"?d&&d.bonus:d&&d.w[wi];const p=GS&&STATS&&w?GS.percentile(STATS,sid(mode,sc),ptsFor(sc,w.found)):null;
+ if(p===null){el.classList.add("hidden");return;}const n=STATS.scenes[sid(mode,sc)].players;el.innerHTML=`📊 You beat <b>${p}%</b> of players on this scene <span class="muted small">(${fmtN(n)} played)</span>`;el.classList.remove("hidden");
+ if($("i-list").firstChild)$("i-list").innerHTML=listHTML(sc,new Set(w.found));}
 function next(){if(mode==="core"&&wi<WORLDS-1){wi++;startWorld();return;}if(mode==="practice"){home();return;}finalResults(false);}
 // ---------- final results ----------
+function curve(){const el=$("curve"),d=DAY();const h=GS&&STATS&&d&&!d.legacy?GS.curve(STATS,"total"):null;if(!h||!d.done){el.classList.add("hidden");return;}
+ const p=GS.percentile(STATS,"total",d.pts),n=STATS.scenes.total.players,bs=h.binSize;
+ const bins=new Map(h.bins.map(b=>[b.from,b.count]));const lo=0,hi=Math.max(d.pts+bs,...h.bins.map(b=>b.from+bs));const nb=Math.max(1,Math.ceil((hi-lo)/bs));
+ // light smoothing so a small crowd still reads as a curve
+ const raw=[...Array(nb)].map((_,i)=>bins.get(lo+i*bs)||0),k=nb>24?2:1,sm=raw.map((_,i)=>{let s=0,w=0;for(let j=-k;j<=k;j++){const v=raw[i+j];if(v!==undefined){const ww=k+1-Math.abs(j);s+=v*ww;w+=ww;}}return s/w;});
+ const W=320,H=96,mx=Math.max(...sm)||1,X=v=>(v-lo)/(hi-lo)*W,Y=c=>H-6-c/mx*(H-16);
+ const pts=sm.map((c,i)=>[X(lo+(i+.5)*bs),Y(c)]);let path=`M0 ${H-6} L${pts.map(q=>q[0].toFixed(1)+" "+q[1].toFixed(1)).join(" L")} L${W} ${H-6}`;
+ const ux=Math.min(W-2,Math.max(2,X(d.pts)));
+ el.innerHTML=`<div class="cv-top"><b>You beat ${p}% of players today</b><span class="muted small">${fmtN(n)} played</span></div>
+ <svg viewBox="0 0 ${W} ${H+14}" role="img" aria-label="Score spread for today. You beat ${p} percent of ${n} players."><defs><clipPath id="cvl"><rect x="0" y="0" width="${ux}" height="${H}"/></clipPath></defs>
+ <path d="${path} Z" class="cv-all"/><path d="${path} Z" class="cv-me" clip-path="url(#cvl)"/><line x1="${ux}" x2="${ux}" y1="4" y2="${H-6}" class="cv-line"/><circle cx="${ux}" cy="6" r="4" class="cv-dot"/>
+ <text x="${Math.min(W-30,Math.max(30,ux))}" y="${H+10}" text-anchor="middle" class="cv-t">You: ${fmtN(d.pts)}</text><text x="0" y="${H+10}" class="cv-t cv-a">0</text><text x="${W}" y="${H+10}" text-anchor="end" class="cv-t cv-a">${fmtN(hi)}</text></svg>`;
+ el.classList.remove("hidden");}
 function tierTotals(d){const c=[0,0,0,0];for(const w of d.w){const sc=SC(w.scene);for(const id of w.found)c[tierIn(sc,id)]++;}return c;}
 function finalResults(instant){clearT();const d=DAY();if(!d){home();return;}mode="core";phase="res";document.body.className="";screen("game");show("res");
  const W=d.w;viewW=Math.max(0,W.length-1);SCENE=SC(W[viewW].scene);header();$("dayno").textContent="#"+N;paintReveal(SCENE,new Set(W[viewW].found),true);
@@ -167,6 +202,7 @@ function finalResults(instant){clearT();const d=DAY();if(!d){home();return;}mode
   if(chv){const ch=chv.c,who=chv.n?esc(chv.n)+"'s":"your friend's";$("chal-res").innerHTML=pts>ch?`🏆 You beat ${who} <b>${fmtN(ch)}</b> by ${fmtN(pts-ch)}!`:pts===ch?`🤝 Dead heat with ${who} <b>${fmtN(ch)}</b>!`:`😅 ${fmtN(ch-pts)} short of ${who} <b>${fmtN(ch)}</b>. Send it to someone else?`;}
   $("s-line").textContent=`🔥 ${streak()} day streak`;$("share").textContent=shareText();$("btn-bonus2").classList.toggle("hidden",!!(d.bonus||d.legacy));};
  if(instant)paint();else timers.push(setTimeout(paint,90));
+$("curve").classList.add("hidden");loadStats().then(()=>{if(phase==="res")curve();});
  const rest=()=>{showList();$("nm").value=S.settings.name;};if(instant)rest();else{$("list").innerHTML="";timers.push(setTimeout(rest,650));}
  countdown();}
 function showList(){const d=DAY();const w=viewW==="b"?d.bonus:d.w[viewW];const sc=SC(w.scene),fs=new Set(w.found);$("list").innerHTML=listHTML(sc,fs);

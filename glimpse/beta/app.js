@@ -176,9 +176,9 @@ function curve(){const el=$("curve"),d=DAY();const h=GS&&STATS&&d&&!d.legacy?GS.
  const p=GS.percentile(STATS,"total",d.pts),n=STATS.scenes.total.players,bs=h.binSize;
  const bins=new Map(h.bins.map(b=>[b.from,b.count]));const lo=0,hi=Math.max(d.pts+bs,...h.bins.map(b=>b.from+bs));const nb=Math.max(1,Math.ceil((hi-lo)/bs));
  // light smoothing so a small crowd still reads as a curve
- const raw=[...Array(nb)].map((_,i)=>bins.get(lo+i*bs)||0),k=nb>24?2:1,sm=raw.map((_,i)=>{let s=0,w=0;for(let j=-k;j<=k;j++){const v=raw[i+j];if(v!==undefined){const ww=k+1-Math.abs(j);s+=v*ww;w+=ww;}}return s/w;});
+ const g=Math.max(1,Math.ceil(nb/16)),nb2=Math.ceil(nb/g),raw=[...Array(nb2)].map((_,i)=>{let s=0;for(let j=0;j<g;j++)s+=bins.get(lo+(i*g+j)*bs)||0;return s;}),k=1,sm=raw.map((_,i)=>{let s=0,w=0;for(let j=-k;j<=k;j++){const v=raw[i+j];if(v!==undefined){const ww=k+1-Math.abs(j);s+=v*ww;w+=ww;}}return s/w;});
  const W=320,H=96,mx=Math.max(...sm)||1,X=v=>(v-lo)/(hi-lo)*W,Y=c=>H-6-c/mx*(H-16);
- const pts=sm.map((c,i)=>[X(lo+(i+.5)*bs),Y(c)]);let path=`M0 ${H-6} L${pts.map(q=>q[0].toFixed(1)+" "+q[1].toFixed(1)).join(" L")} L${W} ${H-6}`;
+ const pts=sm.map((c,i)=>[X(lo+(i+.5)*bs*g),Y(c)]);let path=`M0 ${H-6} L${pts[0][0].toFixed(1)} ${pts[0][1].toFixed(1)}`;for(let i=1;i<pts.length;i++){const a0=pts[i-1],b0=pts[i];path+=` Q${a0[0].toFixed(1)} ${a0[1].toFixed(1)} ${((a0[0]+b0[0])/2).toFixed(1)} ${((a0[1]+b0[1])/2).toFixed(1)}`;}const L=pts[pts.length-1];path+=` T${L[0].toFixed(1)} ${L[1].toFixed(1)} L${W} ${H-6}`;
  const ux=Math.min(W-2,Math.max(2,X(d.pts)));
  el.innerHTML=`<div class="cv-top"><b>You beat ${p}% of players today</b><span class="muted small">${fmtN(n)} played</span></div>
  <svg viewBox="0 0 ${W} ${H+14}" role="img" aria-label="Score spread for today. You beat ${p} percent of ${n} players."><defs><clipPath id="cvl"><rect x="0" y="0" width="${ux}" height="${H}"/></clipPath></defs>

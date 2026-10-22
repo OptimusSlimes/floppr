@@ -211,3 +211,15 @@ body.hurry #t-left{background:#c43c4a!important;color:#fff!important}
 @media(prefers-reduced-motion:reduce){.mk,.mm i{animation:none!important}}
 .lh{grid-column:1/-1;margin:8px 0 2px;font-size:14px}#btn-skip{margin-top:10px;width:100%}.mhint{margin:6px 0 0;text-align:center}
 .mk .tip em{font-style:normal}.marks.names .mm:not(.open) .tip em{display:none}
+
+/* v7.2: missed-name collisions, percentile, curve */
+.mk.below .tip{bottom:auto;top:100%}
+.marks.names .mm.nolab:not(.open) .tip{display:none}
+.pct{background:linear-gradient(90deg,#3a2f8a,#2a2460);color:#fff;border-radius:12px;padding:8px 12px;margin:6px 0;font-weight:600}
+.pct .muted{color:#d9d4ff}
+.curve{background:#fff;border-radius:16px;padding:10px 12px 6px;margin:8px 0;box-shadow:0 4px 0 var(--edge,#d9cbe3)}
+.cv-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}.cv-top b{font-size:17px}
+.curve svg{display:block;width:100%;height:auto;margin-top:4px}
+.cv-all{fill:#e8def3}.cv-me{fill:var(--mint,#3fbf9f);opacity:.85}.cv-line{stroke:var(--ink,#3d3354);stroke-width:2;stroke-dasharray:3 3}.cv-dot{fill:var(--coral,#f0707a);stroke:#fff;stroke-width:2}
+.cv-t{font:700 10px Fredoka,system-ui,sans-serif;fill:var(--ink,#3d3354)}.cv-a{fill:var(--muted,#6f6688);font-weight:500}
+.privacy{margin-top:8px}

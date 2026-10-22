@@ -115,10 +115,27 @@ function finish(){if(phase!=="type")return;clearT();phase="inter";document.body.
 // ---------- per-world reveal ----------
 const sceneKey=sc=>sc.id+"|"+(sc.seed||"");
 function paintReveal(sc,fs,instant){const el=$("scene");cover(false);if(el.dataset.k!==sceneKey(sc)||!el.firstChild){el.innerHTML=sceneSVG(sc);el.dataset.k=sceneKey(sc);}else el.querySelectorAll(".found,.missed").forEach(g=>{g.classList.remove("found","missed","spot");g.style.animationDelay="";});el.classList.remove("iso-look");el.classList.add("reveal");let fi=0;
- for(const id of Object.keys(sc.items)){const g=el.querySelector("#o-"+id);if(!g)continue;if(fs.has(id)){const k=fi++;g.classList.add("found");g.style.animationDelay=(instant?0:300+k*70)+"ms";if(!instant&&k<12)timers.push(setTimeout(()=>SFX.pop(k),300+k*70));}else g.classList.add("missed");}}
+ for(const id of Object.keys(sc.items)){const g=el.querySelector("#o-"+id);if(!g)continue;if(fs.has(id)){const k=fi++;g.classList.add("found");g.style.animationDelay=(instant?0:300+k*70)+"ms";if(!instant&&k<12)timers.push(setTimeout(()=>SFX.pop(k),300+k*70));}else g.classList.add("missed");}
+ marks(sc,fs,instant);}
+// ---------- "you missed these" markers ----------
+function marks(sc,fs,instant){const el=$("scene");let m=$("marks");if(m)m.remove();const svg=el.querySelector("svg");if(!svg)return;const [W,H]=sc.vb;
+ m=document.createElement("div");m.id="marks";m.className="marks"+(instant?" now":"");const miss=Object.keys(sc.items).filter(id=>!fs.has(id));
+ const pts=[];for(const id of Object.keys(sc.items)){const g=svg.querySelector("#o-"+id);if(!g)continue;let b;try{b=g.getBBox();}catch(e){continue;}if(!b.width)continue;
+  let x=(b.x+b.width/2)/W*100,y=(b.y+b.height*.4)/H*100;for(const p of pts){if(Math.abs(p[0]-x)<4.5&&Math.abs(p[1]-y)<4){y+=4;}}pts.push([x,y]);
+  const f=fs.has(id),t=tierIn(sc,id);const k=document.createElement("button");k.type="button";k.className="mk "+(f?"mf":"mm");k.dataset.id=id;k.style.left=x+"%";k.style.top=y+"%";
+  k.innerHTML=`<i>${f?"✓":"?"}</i><span class="tip">${esc(sc.items[id].label)}<em> · ${TIERS[t].e} ${TIERS[t].n}</em></span>`;k.setAttribute("aria-label",`${sc.items[id].label}, ${TIERS[t].n} (estimated), ${f?"found":"missed"}`);
+  if(!instant)k.style.animationDelay=(700+pts.length*25)+"ms";m.appendChild(k);}
+ const bar=document.createElement("div");bar.className="mbar";bar.innerHTML=`<button type="button" class="mb-names" aria-pressed="false">Show missed names (${miss.length})</button><button type="button" class="mb-hide">Hide marks</button>`;m.appendChild(bar);
+ el.appendChild(m);}
+function markTap(e){const m=$("marks");if(!m)return;const k=e.target.closest(".mk");if(k){e.stopPropagation();const on=!k.classList.contains("open");m.querySelectorAll(".mk.open").forEach(x=>x.classList.remove("open"));k.classList.toggle("open",on);
+  if(on){const g=$("scene").querySelector("#o-"+k.dataset.id);if(g){g.classList.remove("spot");void g.getBoundingClientRect();g.classList.add("spot");}}return;}
+ if(e.target.closest(".mb-names")){const b=e.target.closest(".mb-names"),on=!m.classList.contains("names");m.classList.toggle("names",on);b.setAttribute("aria-pressed",on);b.textContent=on?"Hide names":`Show missed names (${m.querySelectorAll(".mm").length})`;return;}
+ if(e.target.closest(".mb-hide")){const on=!m.classList.contains("off");m.classList.toggle("off",on);e.target.textContent=on?"Show marks":"Hide marks";return;}}
 function countUp(el,to,cb){if(RM()){el.textContent=fmtN(to);cb&&timers.push(setTimeout(cb,50));return;}const t0=performance.now(),D=1200;let lt=0;const tick=()=>{const tn=performance.now(),k=Math.min(1,(tn-t0)/D),e=1-Math.pow(1-k,3);el.textContent=fmtN(Math.round(to*e));if(to&&tn-lt>85&&k<1){lt=tn;SFX.count();}if(k<1)timers.push(requestAnimationFrame(tick));else cb&&cb();};tick();}
 function rarestOf(sc,fs){return [...fs].sort((a,b)=>tierIn(sc,b)-tierIn(sc,a)||(sc.items[a].label<sc.items[b].label?-1:1))[0];}
-function listHTML(sc,fs){return Object.keys(sc.items).sort((a,b)=>(fs.has(b)-fs.has(a))||tierIn(sc,b)-tierIn(sc,a)).map(id=>{const f=fs.has(id),t=tierIn(sc,id);return `<button data-id="${id}" class="${f?"":"miss"}" aria-label="${esc(sc.items[id].label)}, ${TIERS[t].n}, ${f?"found":"missed"}. Show in picture"><span>${f?"✅":"▫️"} ${esc(sc.items[id].label)}</span><span class="pc">${TIERS[t].e} ${f?"+"+TIERS[t].p:TIERS[t].n}</span></button>`;}).join("");}
+function listHTML(sc,fs){const ids=Object.keys(sc.items),mi=ids.filter(i=>!fs.has(i)),fo=ids.filter(i=>fs.has(i));const by=(a,b)=>tierIn(sc,b)-tierIn(sc,a);
+ return (mi.length?`<h4 class="lh">You missed these (${mi.length})</h4>`+rowsHTML(sc,fs,mi.sort(by)):"")+(fo.length?`<h4 class="lh">You found (${fo.length})</h4>`+rowsHTML(sc,fs,fo.sort(by)):"");}
+function rowsHTML(sc,fs,ids){return ids.map(id=>{const f=fs.has(id),t=tierIn(sc,id);return `<button data-id="${id}" class="${f?"":"miss"}" aria-label="${esc(sc.items[id].label)}, ${TIERS[t].n}, ${f?"found":"missed"}. Show in picture"><span>${f?"✅":"❓"} ${esc(sc.items[id].label)}</span><span class="pc">${TIERS[t].e} ${TIERS[t].n}${f?" +"+TIERS[t].p:""}</span></button>`;}).join("");}
 function interstitial(){phase="inter";show("inter");header();pips($("i-pips"));const sc=SCENE,fs=new Set(found),tot=Object.keys(sc.items).length,pts=ptsFor(sc,[...fs]);
  cover(true,"Time's up!");timers.push(requestAnimationFrame(()=>timers.push(setTimeout(()=>{if(phase==="inter")paintReveal(sc,fs,false);},0))));
  $("i-kick").textContent=(mode==="core"?`Scene ${wi+1}`:mode==="bonus"?"Bonus scene":"Practice")+` · ${sc.emoji} ${sc.title}`;
@@ -126,7 +143,7 @@ function interstitial(){phase="inter";show("inter");header();pips($("i-pips"));c
  timers.push(setTimeout(()=>GAudio.phase("res",sc.id),120));
  $("i-sub").textContent=`${fs.size}/${tot} found · ${Math.round(100*fs.size/tot)}% of the scene`;
  const r=rarestOf(sc,fs);$("i-rarest").innerHTML=r?`<span class="muted small">Rarest find</span><b>${TIERS[tierIn(sc,r)].e} ${esc(sc.items[r].label)}</b><span class="pill">${TIERS[tierIn(sc,r)].n} · +${TIERS[tierIn(sc,r)].p}</span>`:`<span class="muted">No objects found this time. Keep going!</span>`;
- const last=mode!=="core"||wi>=WORLDS-1;$("btn-next").textContent=mode==="core"?(last?"See today's total →":`Next scene → (${wi+2} of ${WORLDS})`):"See result →";
+ const last=mode!=="core"||wi>=WORLDS-1;$("btn-next").textContent=mode==="core"?(last?"See today's total →":`Next scene → (${wi+2} of ${WORLDS})`):"See result →";$("btn-skip").textContent=last?"Skip →":"Skip to next →";
  const d=DAY();$("i-run").textContent=mode==="core"&&d?`Running total: ${fmtN(d.pts)} pts`:mode==="bonus"?"Your bonus score is extra. It doesn't change your daily score.":"Practice: not saved.";
  if(mode==="core"&&wi<WORLDS-1)timers.push(setTimeout(()=>prefetch([RUN[wi+1]]),1600));else if(mode==="core"&&!(DAY()&&DAY().bonus))timers.push(setTimeout(()=>prefetch([BONUS]),2500));
  $("i-list").innerHTML="";timers.push(setTimeout(()=>{$("i-list").innerHTML=listHTML(sc,fs);},650));
@@ -169,13 +186,38 @@ function countdown(){const el=$("cd");const f=()=>{el.textContent=hms(msToSydMid
 async function share(){const t=$("share").textContent;try{if(navigator.share&&matchMedia("(pointer:coarse)").matches){await navigator.share({text:t});return;}}catch(e){if(e&&e.name==="AbortError")return;}copy(t);}
 async function copy(t){try{await navigator.clipboard.writeText(t);toast("Copied! Paste it anywhere.");}catch{const r=document.createRange();r.selectNodeContents($("share"));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Selected: press copy");}}
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),1800);}
+// ---------- share card (built on the device) ----------
+function svgImg(sc){return new Promise((ok,no)=>{const s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${sc.vb[0]} ${sc.vb[1]}" width="${sc.vb[0]*2}" height="${sc.vb[1]*2}">${GART.svgOf(sc)}</svg>`;const u=URL.createObjectURL(new Blob([s],{type:"image/svg+xml"}));const i=new Image();i.onload=()=>{URL.revokeObjectURL(u);ok(i);};i.onerror=e=>{URL.revokeObjectURL(u);no(e);};i.src=u;});}
+function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+function slab(c,x,y,w,h,r,fill,edge){c.fillStyle="#6b5a8a22";rr(c,x+10,y+22,w,h,r);c.fill();c.fillStyle=edge;rr(c,x,y+12,w,h,r);c.fill();c.fillStyle=fill;rr(c,x,y,w,h,r);c.fill();}
+async function cardBlob(){const d=DAY();if(!d)return null;const W=1080,H=1350,cv=document.createElement("canvas");cv.width=W;cv.height=H;const c=cv.getContext("2d");
+ const F=(s,w=800)=>`${w} ${s}px ui-rounded,"SF Pro Rounded","Nunito","Segoe UI",system-ui,sans-serif`;
+ const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,"#fde8f1");g.addColorStop(.55,"#e9e4fb");g.addColorStop(1,"#d9f0ec");c.fillStyle=g;c.fillRect(0,0,W,H);
+ c.fillStyle="#ffffff55";for(let i=0;i<26;i++){const x=(i*397)%W,y=(i*613)%H;c.beginPath();c.arc(x,y,6+(i%5)*5,0,7);c.fill();}
+ c.textAlign="center";c.fillStyle="#2f2650";c.font=F(76,900);c.fillText("👁️ Glimpse",W/2,130);c.font=F(40,700);c.fillStyle="#6b5f8f";c.fillText(`Daily #${N}`,W/2,190);
+ slab(c,90,240,900,330,48,"#ffffff","#e3d6ea");const pct=Math.round(100*d.count/d.total),st=streak();
+ c.fillStyle="#2f2650";c.font=F(150,900);c.fillText(fmtN(d.pts),W/2,420);c.font=F(40,800);c.fillStyle="#8a6d00";c.fillText("points",W/2,475);
+ c.font=F(38,700);c.fillStyle="#4b4270";c.fillText(`${d.count}/${d.total} found · ${pct}%${st?` · 🔥 ${st} day streak`:""}`,W/2,540);
+ const tw=270,tg=45,tx0=(W-(tw*3+tg*2))/2,ty=640;const ws=d.w.slice(0,3);
+ for(let i=0;i<ws.length;i++){const w=ws[i],sc=SC(w.scene),x=tx0+i*(tw+tg),th=Math.round(tw*sc.vb[1]/sc.vb[0]);slab(c,x-12,ty-12,tw+24,th+120,34,"#ffffff","#e3d6ea");
+  try{const im=await svgImg(sc);c.save();rr(c,x,ty,tw,th,24);c.clip();c.drawImage(im,x,ty,tw,th);c.restore();}catch(e){c.fillStyle="#efe8f7";rr(c,x,ty,tw,th,24);c.fill();c.font=F(90);c.fillStyle="#2f2650";c.fillText(sc.emoji,x+tw/2,ty+th/2+30);}
+  c.fillStyle="#2f2650";c.font=F(32,800);c.fillText(`${sc.emoji} ${fmtN(w.pts)}`,x+tw/2,ty+th+50);c.font=F(26,700);c.fillStyle="#6b5f8f";c.fillText(`${w.count}/${w.total} found`,x+tw/2,ty+th+88);}
+ c.font=F(40,800);c.fillStyle="#2f2650";c.fillText("Can you beat me?",W/2,H-150);c.font=F(32,700);c.fillStyle="#6b5f8f";c.fillText(URL_PUBLIC.replace(/^https:\/\//,""),W/2,H-95);
+ return await new Promise(ok=>cv.toBlob(ok,"image/png"));}
+async function shareCard(){let b;try{b=await cardBlob();}catch(e){b=null;}const t=$("share").textContent;if(!b){copy(t);return;}
+ const f=new File([b],`glimpse-${N}.png`,{type:"image/png"});
+ try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],text:t});return;}}catch(e){if(e&&e.name==="AbortError")return;}
+ const u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=f.name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);
+ try{await navigator.clipboard.writeText(t);toast("Image saved. Text copied too.");}catch{toast("Image saved.");}}
+window.__card=cardBlob;
 // ---------- wiring ----------
 $("btn-play").onclick=()=>{SFX.click();play();};$("btn-bonus").onclick=$("btn-bonus2").onclick=()=>{SFX.click();playBonus();};
 $("btn-done").onclick=finish;$("btn-next").onclick=()=>{SFX.click();next();};$("btn-home").onclick=home;
 const goHome=()=>{if(phase==="look"||phase==="type"||phase==="count"){if(!confirm("Leave this scene? It keeps what you found so far, and you can't replay it."))return;if(mode!=="practice"){lockWorld(true);}}home();};
 $("brand").onclick=goHome;$("brand").onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();goHome();}};
 $("btn-help").onclick=()=>$("d-help").showModal();$("btn-stats").onclick=stats;
-$("btn-share").onclick=()=>{SFX.click();share();};
+$("btn-share").onclick=()=>{SFX.click();share();};$("btn-card").onclick=()=>{SFX.click();shareCard();};$("btn-skip").onclick=()=>{SFX.click();next();};
+$("scene").addEventListener("click",markTap);
 $("nm").addEventListener("input",()=>{S.settings.name=cleanName($("nm").value);save();$("share").textContent=shareText();});$("btn-copy").onclick=()=>copy($("share").textContent);
 document.querySelectorAll("[data-close]").forEach(b=>b.onclick=()=>b.closest("dialog").close());
 $("d-help").addEventListener("close",()=>{S.settings.seenHelp=true;save();});

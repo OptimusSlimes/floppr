@@ -1,0 +1,103 @@
+<!doctype html><html lang="en"><head>
+<meta name="robots" content="noindex"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Floppr · climb the board, call the flop</title><meta name="theme-color" content="#3b2a6b">
+<meta name="description" content="A cosy daily movie-budget game. Guess 7 real budgets, call the flops, climb the ladder and dive!">
+<meta property="og:type" content="website"><meta property="og:url" content="https://optimusslimes.github.io/floppr/"><meta property="og:title" content="Floppr · the daily movie-budget dive">
+<meta property="og:description" content="Guess 7 real movie budgets, call Flop or Smash, and help Pip the hippo climb the ladder for a big dive.">
+<meta property="og:image" content="https://optimusslimes.github.io/floppr/og.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="Floppr · the daily movie-budget dive"><meta name="twitter:description" content="Guess 7 real movie budgets, call Flop or Smash, and help Pip dive."><meta name="twitter:image" content="https://optimusslimes.github.io/floppr/og.png">
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="icon" href="favicon.ico" sizes="32x32"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css"></head><body>
+<div id="scene" aria-hidden="true">
+ <div id="sky"></div><div id="starWrap"><div class="st1"></div></div><div id="starWrap2"><div class="st2"></div></div><div id="sun"></div>
+ <div id="shake">
+ <div class="layer" id="farHills" data-f="0.12"><svg viewBox="0 0 1600 300" preserveAspectRatio="none"><path d="M0 220 Q150 120 320 190 T640 170 T980 150 T1300 185 T1600 140 V300 H0Z" fill="#7a5fa8"/><path d="M0 250 Q200 190 420 235 T860 220 T1250 240 T1600 210 V300 H0Z" fill="#6a4f98"/></svg></div>
+ <div class="layer" id="lot" data-f="0.3"><svg viewBox="0 0 1600 340" preserveAspectRatio="xMidYMax slice">
+  <g id="beams"><path class="beam b1" d="M150 230 L40 -260 L170 -260Z"/><path class="beam b2" d="M1190 220 L1240 -280 L1360 -280Z"/></g>
+  <g fill="#4e3d7d"><path d="M80 340V215 Q170 160 260 215V340Z"/><rect x="330" y="250" width="70" height="90"/><rect x="560" y="230" width="120" height="110"/><path d="M1040 340V195 Q1150 125 1260 195V340Z"/><rect x="1300" y="240" width="160" height="100"/><rect x="1480" y="200" width="70" height="140"/></g>
+  <g fill="#ffd98a"><rect x="580" y="250" width="14" height="14" rx="3" class="win w1"/><rect x="610" y="250" width="14" height="14" rx="3"/><rect x="640" y="280" width="14" height="14" rx="3" class="win w2"/><rect x="1320" y="260" width="14" height="14" rx="3"/><rect x="1380" y="290" width="14" height="14" rx="3" class="win w3"/><rect x="1495" y="220" width="12" height="12" rx="3"/><rect x="1520" y="260" width="12" height="12" rx="3" class="win w1"/><rect x="345" y="270" width="12" height="12" rx="3"/></g>
+  <rect x="1085" y="200" width="130" height="34" rx="10" fill="#3a2d63"/><text x="1150" y="226" font-family="Fredoka" font-size="26" fill="#ffd98a" text-anchor="middle" font-weight="700">STAGE 7</text>
+  </svg></div>
+ 
+ <div class="layer" id="far" data-f="0.6"></div>
+ <div class="layer" id="world" data-f="1">
+  <div id="ground"></div><div id="pool"><div class="wave"></div><div class="wave w2"></div></div>
+  <div id="near"></div>
+  <div id="rig"><div id="ladder"></div><div id="marks"></div><div id="ghost" hidden></div>
+  <svg id="board" viewBox="0 0 160 60" width="160" height="60"><path id="boardPath" d="M4 30 L150 30" stroke="#2d2350" stroke-width="16" stroke-linecap="round" fill="none"/><path id="boardFill" d="M4 30 L150 30" stroke="#ff7aa2" stroke-width="8" stroke-linecap="round" fill="none"/><rect x="0" y="22" width="14" height="40" rx="4" fill="#f2b880" stroke="#2d2350" stroke-width="4"/></svg>
+  <div id="pipWrap"><div id="pipSq"><svg id="pip" viewBox="0 0 200 200">
+   <defs><linearGradient id="gBody" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c7b5f2"/><stop offset="1" stop-color="#a691e0"/></linearGradient></defs>
+   <g stroke="#2d2350" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+    <g id="legL" class="limb"><path d="M66 158 q-4 22 6 26 h22 q6 -2 2 -10 l-6 -20Z" fill="url(#gBody)"/><path d="M76 184 v-5 M84 184 v-5" stroke-width="3"/></g>
+    <g id="legR" class="limb"><path d="M134 158 q4 22 -6 26 h-22 q-6 -2 -2 -10 l6 -20Z" fill="url(#gBody)"/><path d="M124 184 v-5 M116 184 v-5" stroke-width="3"/></g>
+    <path id="bodyS" d="M100 82 C150 82 162 118 158 146 C154 172 130 180 100 180 C70 180 46 172 42 146 C38 118 50 82 100 82Z" fill="url(#gBody)"/>
+    <path d="M100 112 C126 112 136 132 134 150 C132 166 118 172 100 172 C82 172 68 166 66 150 C64 132 74 112 100 112Z" fill="#eee5ff" stroke="none"/>
+    <g id="armL" class="limb"><path d="M52 112 C36 118 30 138 38 148 C44 154 54 148 58 136Z" fill="url(#gBody)"/></g>
+    <g id="armR" class="limb"><path d="M148 112 C164 118 170 138 162 148 C156 154 146 148 142 136Z" fill="url(#gBody)"/></g>
+    <g id="head">
+     <ellipse cx="66" cy="34" rx="9" ry="10" fill="#b8a4ec"/><ellipse cx="134" cy="34" rx="9" ry="10" fill="#b8a4ec"/>
+     <path d="M100 26 C140 26 152 50 150 70 C148 96 128 104 100 104 C72 104 52 96 50 70 C48 50 60 26 100 26Z" fill="url(#gBody)"/>
+     <path d="M100 66 C130 66 140 76 140 86 C140 100 124 106 100 106 C76 106 60 100 60 86 C60 76 70 66 100 66Z" fill="#d9ccfa"/>
+     <ellipse cx="88" cy="80" rx="3.5" ry="4.5" fill="#2d2350" stroke="none"/><ellipse cx="112" cy="80" rx="3.5" ry="4.5" fill="#2d2350" stroke="none"/>
+     <g id="eyes" stroke="none"><g class="eye"><ellipse cx="80" cy="54" rx="8" ry="9.5" fill="#fff" stroke="#2d2350" stroke-width="4"/><circle id="pupL" cx="81" cy="55" r="5" fill="#2d2350"/><circle cx="83" cy="52" r="2" fill="#fff"/></g>
+      <g class="eye"><ellipse cx="120" cy="54" rx="8" ry="9.5" fill="#fff" stroke="#2d2350" stroke-width="4"/><circle id="pupR" cx="119" cy="55" r="5" fill="#2d2350"/><circle cx="121" cy="52" r="2" fill="#fff"/></g></g>
+     <path id="browL" d="M71 41 Q80 37 88 41" fill="none" stroke-width="4"/><path id="browR" d="M112 41 Q120 37 129 41" fill="none" stroke-width="4"/>
+     <ellipse cx="64" cy="70" rx="8" ry="4.5" fill="#ff9fbf" stroke="none" opacity=".8"/><ellipse cx="136" cy="70" rx="8" ry="4.5" fill="#ff9fbf" stroke="none" opacity=".8"/>
+     <path id="mouth" d="M90 94 Q100 100 110 94" fill="none" stroke-width="4"/>
+     <g id="cap"><path d="M58 34 C62 6 138 6 142 34Z" fill="#33285e"/><path d="M58 34 C80 40 120 40 142 34 L146 38 C120 46 80 46 54 38Z" fill="#241c46"/><path d="M62 27 C86 31 114 31 138 27 L139 33 C114 37 86 37 61 33Z" fill="#ff7aa2" stroke-width="3"/><circle cx="100" cy="9" r="5" fill="#ffd36e" stroke-width="3"/><path d="M119 20 l3 6 6 1 -4.5 4 1 6 -5.5 -3 -5.5 3 1 -6 -4.5 -4 6 -1Z" fill="#ffd36e" stroke-width="2"/></g>
+    </g></g></svg></div></div>
+  </div>
+ </div>
+ <div class="layer" id="front" data-f="1"></div>
+ <canvas id="fxc"></canvas>
+ </div>
+ <div id="fade"></div>
+</div>
+<div id="bandCard" aria-live="polite"><small>New altitude</small><b></b><em></em></div>
+<div id="toast" aria-live="polite"></div>
+<div id="lmPop" aria-live="polite"></div><div id="gainPop" aria-hidden="true"></div><div id="diveName" aria-hidden="true"></div><div id="judges" aria-live="polite"></div>
+<div id="hud"><div class="logo">Fl<span>o</span>ppr</div><div class="hudR"><button id="hudHelp" class="ghost hudBtn" aria-label="How to play" style="display:none">?</button><button id="mute" class="ghost hudBtn" aria-label="Toggle sound">🔊</button><div id="height"><b id="hm">0 m</b><small id="hband">Studio Lot</small></div><div id="updraft" title="Updraft multiplier">⚡×1</div></div></div>
+<main id="panel" class="card">
+ <div id="coach" hidden><span id="coachTxt"></span><button id="coachSkip" class="linkBtn">Skip rehearsal</button></div>
+ <div class="top"><div id="kicker"></div><div class="tools"><span id="streak"></span><button id="helpBtn" class="ghost" aria-label="How to play">?</button></div></div>
+ <div class="filmRow"><h2 id="title"></h2><div id="dots" aria-hidden="true"></div></div>
+ <section id="play" class="sec">
+  <div class="meta"><span id="meta"></span><span id="hint" aria-live="polite"></span></div>
+  <div id="shelves" role="radiogroup" aria-label="Budget shelf (keys 1 to 6)"></div>
+  <div class="tune"><input type="range" id="slider" min="0" max="1000" value="500" aria-label="Fine-tune budget" disabled><b id="gval" aria-live="polite">–</b><input id="amt" type="text" inputmode="text" enterkeyhint="done" placeholder="type it" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a budget"><button id="prod" class="prodBtn" aria-label="Ask the Producer for a higher or lower hint (once a day)" title="Ask the Producer: higher or lower? (once a day, caps that climb at 2 km)">🎬<i id="prodLeft">1</i></button></div>
+  <div class="verdicts" id="calls" role="group" aria-label="Call it (keys Q W E R)">
+   <button data-v="0" class="v v0" disabled><span>💦 <b>Flop</b></span><small>&lt;1× back</small></button><button data-v="1" class="v v1" disabled><span>😐 <b>Even</b></span><small>1–2.5×</small></button><button data-v="2" class="v v2" disabled><span>🎉 <b>Hit</b></span><small>2.5–8×</small></button><button data-v="3" class="v v3" disabled><span>🚀 <b>Smash</b></span><small>8×+</small></button></div>
+ </section>
+ <section id="reveal" class="sec" hidden aria-live="polite">
+  <div id="rHead" class="rhead"></div>
+  <div class="facts"><div><small>You</small><b id="rGuess"></b><em id="rOff"></em></div><div class="hero"><small>Real budget</small><b id="rBudget"></b><em id="rRange"></em></div><div><small>Worldwide</small><b id="rGross"></b><em id="rMult"></em></div><div class="gain"><small>Climb</small><b id="cGain">+0 m</b><em id="cMath"></em></div></div>
+  <div id="rCall" class="rcall"></div>
+  <div class="nextRow"><button id="next" class="btn big">Next film →</button><button id="moreBtn" class="ghost moreBtn" aria-expanded="false" aria-controls="rMore" aria-label="Details">ⓘ</button></div>
+  <div id="rMore" hidden><div id="nextBand"><div><i id="nbFill"></i></div><span id="nbTxt"></span></div><p id="rPassed" class="fine"></p><p class="fine" id="rSrc"></p></div>
+ </section>
+ <section id="end" class="sec" hidden>
+  <div class="eTop"><div><b id="eAlt"></b><small id="eBand"></small></div><div id="eDive"></div></div>
+  <div id="eLand"></div>
+  <div id="eRows"></div>
+  <div class="row eBtns"><button id="sharePost" class="btn">Share</button><button id="challenge" class="btn alt">Challenge</button><button id="endMore" class="btn alt" aria-expanded="false">More ▴</button></div>
+  <div id="eMoreBox" hidden>
+   <div id="eSub" class="fine"></div>
+   <div id="postWrap"><img id="postImg" alt="Your Floppr postcard"></div>
+   <pre id="share"></pre>
+   <div class="box" id="streakBox"></div>
+   <div class="box"><b>Your altitude album</b><div id="album"></div><small id="albumNote"></small></div>
+   <details><summary>Today's films</summary><table id="recap"><thead><tr><th>Film</th><th>Guess</th><th>Real</th><th>Call</th><th>+m</th></tr></thead><tbody></tbody></table><p class="fine" id="compSrc"></p></details>
+   <div class="row"><button id="practice" class="btn alt">Practice</button><button id="archBtn" class="btn alt">Archive</button><button id="albumBtn" class="btn alt">Album</button></div>
+   <p class="fine" id="best"></p>
+  </div>
+ </section>
+</main>
+<dialog id="help"><h3>How to play 🦛</h3><p>Every day: <b>7 real films</b>. For each: tap a <b>budget shelf</b>, slide to fine-tune (or type it), then call how it did worldwide: <b>Flop / Even / Hit / Smash</b>. Calling locks it in.</p>
+<p>🪜 Every guess climbs: <b>3 km</b> for a bullseye (inside the range or within 10%), down to 150 m for a wild one. Right shelf = at least 700 m.</p>
+<p>⚡ <b>Updraft</b>: each right call raises your multiplier (×1.5, ×2, ×3, ×4, ×6) before it applies; a wrong call drops it one step. Film 7 is the <b>Headliner</b>: call it right for ×2 (a wrong call gets no ×2).</p><p>📏 Climb size slides smoothly with accuracy: within 10% = 3 km, then about 2 km at 17% off, 1.3 km at 37%, 700 m at 1.7×, 350 m at 2.5× and 150 m from 4× off.</p>
+<p>🏙️ Pip passes real landmarks on the way up. The higher he gets, the fancier the final dive: belly flop, cannonball, front flip, superhero, starfish twister… and something special from space.</p>
+<p>🎬 Once a day the Producer will tell you higher or lower (that film's climb caps at 2 km).</p><button class="btn" id="helpClose">Let's climb</button></dialog>
+<dialog id="arch"><h3>Archive</h3><div id="archList"></div><button class="btn" id="archClose">Close</button></dialog>
+<dialog id="albumDlg"><h3>Altitude album</h3><div id="albumBig"></div><button class="btn" id="albumClose">Close</button></dialog>
+<script src="data.js"></script><script src="landmarks.js"></script><script src="bands.js"></script><script src="fx.js"></script><script src="audio.js"></script><script src="game.js"></script></body></html>

@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://optimusslimes.github.io/floppr/sitemap.xml

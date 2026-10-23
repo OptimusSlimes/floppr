@@ -29,8 +29,10 @@ function msToSydMidnight(){const now=new Date();const p=Object.fromEntries(new I
  return ((23-+p.hour)*3600+(59-+p.minute)*60+(60-+p.second))*1000;}
 // ---------- daily scenes: generated per Sydney date by art.js (GART). 4 themes a day: 3 core + Bonus.
 const today=sydDate(), N=dayNum(today);
-const DAYT=GART.themesFor(N), RUN=DAYT.slice(0,3), BONUS=DAYT[3];
-const SC=id=>GART.THEMES.includes(id)?GART.scene(id,N):null;
+// v8 content (27 themes) starts the day after release; release day and earlier keep the frozen v7 generator byte-for-byte.
+const V8_FROM=4, GA=(N>=V8_FROM&&window.GART8)||window.GART;
+const DAYT=GA.themesFor(N), RUN=DAYT.slice(0,3), BONUS=DAYT[3];
+const SC=id=>GA.THEMES.includes(id)?GA.scene(id,N):null;
 // ---------- rarity: ESTIMATED difficulty per object (size, placement, contrast). Replace RARITY.tier with crowd data later.
 const TIERS=[{n:"Common",e:"⚪",p:50},{n:"Uncommon",e:"🔷",p:80},{n:"Rare",e:"✨",p:120},{n:"Epic",e:"💎",p:180}];
 const RARITY={source:"estimate",tier:(scene,id)=>{const d=scene.items[id]&&scene.items[id].diff;return d>=0&&d<=3?d:0;}};
@@ -76,7 +78,7 @@ const clearT=()=>{timers.forEach(t=>{clearTimeout(t);clearInterval(t);cancelAnim
 const RM=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
 function show(p){["ready","look","type","inter","res"].forEach(x=>$("p-"+x).classList.toggle("hidden",x!==p));}
 function screen(s){$("home").classList.toggle("hidden",s!=="home");$("game").classList.toggle("hidden",s!=="game");window.scrollTo({top:0});}
-function sceneSVG(sc){const svg=GART.svgOf(sc);const [w,h]=sc.vb;return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(sc.title)}: an isometric diorama with ${Object.keys(sc.items).length} things to remember">${svg}</svg>`;}
+function sceneSVG(sc){const svg=GA.svgOf(sc);const [w,h]=sc.vb;return `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(sc.title)}: an isometric diorama with ${Object.keys(sc.items).length} things to remember">${svg}</svg>`;}
 function setAR(sc){const [w,h]=sc.vb;document.documentElement.style.setProperty("--ar",`${w}/${h}`);document.documentElement.style.setProperty("--arn",(w/h).toFixed(4));}
 const lookMs=()=>LOOKQ||(mode==="bonus"?BONUS_LOOK:mode==="practice"?10000:LOOKS[wi]);
 const typeMs=()=>TYPEQ||(mode==="bonus"?BONUS_TYPE:60000);
@@ -85,7 +87,7 @@ function pips(el){if(mode!=="core"){el.innerHTML="";return;}const d=DAY();el.inn
 function header(){setAR(SCENE);$("dayno").textContent=mode==="practice"?"practice":"#"+N;$("intro-t").textContent=SCENE.title;$("intro-e").textContent=SCENE.emoji;$("intro-n").textContent=`${label()} · ${Object.keys(SCENE.items).length} objects · ${Math.round(lookMs()/1000)} seconds to look`;$("intro").dataset.scene=SCENE.id;$("intro").querySelector(".kick").textContent=label();}
 function cover(on,sub){$("scene").classList.toggle("hidden",on);$("cover").classList.toggle("hidden",!on);if(sub)$("cover-sub").textContent=sub;}
 const idle=f=>(window.requestIdleCallback?requestIdleCallback(f,{timeout:1500}):setTimeout(f,200));
-function prefetch(ids){ids=ids.filter(Boolean);const step=()=>{const id=ids.shift();if(!id)return;try{GART.svgOf(SC(id));}catch(e){}if(ids.length)idle(step);};idle(step);}
+function prefetch(ids){ids=ids.filter(Boolean);const step=()=>{const id=ids.shift();if(!id)return;try{GA.svgOf(SC(id));}catch(e){}if(ids.length)idle(step);};idle(step);}
 // ---------- home ----------
 function home(){clearT();phase="home";mode="core";document.body.className="on-home";screen("home");GAudio.phase("home");
  $("h-no").textContent="Glimpse #"+N;$("h-date").textContent=new Date(today+"T12:00:00Z").toLocaleDateString("en-AU",{weekday:"long",day:"numeric",month:"long",timeZone:"UTC"});
@@ -100,13 +102,13 @@ function home(){clearT();phase="home";mode="core";document.body.className="on-ho
  else if(ch){hc.classList.remove("hidden");hc.innerHTML=`🎯 ${ch.n?esc(ch.n):"A friend"} scored <b>${fmtN(ch.c)}</b> on today's Glimpse. Beat it!`;}
  const st=statsData();$("h-stats").innerHTML=`<div><b>${st.played}</b>played</div><div><b>${st.streak}</b>streak</div><div><b>${fmtN(st.best)}</b>best total</div><div><b>${fmtN(st.avg)}</b>avg total</div>`;
  {const d0=DAY();const nx=d0&&d0.done?[]:RUN.slice(d0?d0.w.length:0);prefetch(nx.slice(0,2));}
- $("h-prac").innerHTML=GART.THEMES.map((t,i)=>`<button data-sc="${i}">${GART.META[t][1]} ${esc(GART.META[t][0])}</button>`).join("");}
+ $("h-prac").innerHTML=GA.THEMES.map((t,i)=>`<button data-sc="${i}">${GA.META[t][1]} ${esc(GA.META[t][0])}</button>`).join("");}
 function homeCountdown(){const f=()=>{const ms=msToSydMidnight();$("h-cd").textContent=hms(ms);if(!Q.get("date")&&sydDate()!==today){$("h-cd").textContent="now! Reload";}};f();timers.push(setInterval(f,1000));}
 const hms=ms=>[Math.floor(ms/36e5),Math.floor(ms%36e5/6e4),Math.floor(ms%6e4/1e3)].map(x=>String(x).padStart(2,"0")).join(":");
 // ---------- run flow ----------
 function play(){const d=DAY();if(d&&d.done){finalResults(true);return;}mode="core";wi=d?d.w.length:0;startWorld();}
 function playBonus(){const d=DAY();if(!d||!d.done||d.bonus||d.legacy)return;mode="bonus";startWorld();}
-function practiceScene(i){mode="practice";SCENE=GART.scene(GART.THEMES[i],-N-1);startWorld(SCENE);}
+function practiceScene(i){mode="practice";SCENE=GA.scene(GA.THEMES[i],-N-1);startWorld(SCENE);}
 function startWorld(fixed){clearT();GAudio.unlock();GAudio.setPrefs({music:S.settings.music,sfx:S.settings.sfx});
  SCENE=fixed||(mode==="bonus"?SC(BONUS):SC(RUN[wi]));M=GMatch.build(SCENE);found=new Set();entries=[];
  document.body.className="";screen("game");header();show("ready");pips($("r-pips"));$("r-title").textContent=label()+": "+SCENE.title;$("r-sub").textContent=`Look at the scene for ${Math.round(lookMs()/1000)} seconds and try to remember all the objects. Then you have ${Math.round(typeMs()/1000)} seconds to type everything you saw.`+(mode==="bonus"?" This score is extra. It doesn't change your daily score.":mode==="practice"?" Practice doesn't count.":"");
@@ -229,7 +231,7 @@ async function share(){const t=$("share").textContent;try{if(navigator.share&&ma
 async function copy(t){try{await navigator.clipboard.writeText(t);toast("Copied! Paste it anywhere.");}catch{const r=document.createRange();r.selectNodeContents($("share"));const s=getSelection();s.removeAllRanges();s.addRange(r);toast("Selected: press copy");}}
 function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");setTimeout(()=>t.classList.remove("on"),1800);}
 // ---------- share card (built on the device) ----------
-function svgImg(sc){return new Promise((ok,no)=>{const s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${sc.vb[0]} ${sc.vb[1]}" width="${sc.vb[0]*2}" height="${sc.vb[1]*2}">${GART.svgOf(sc)}</svg>`;const u=URL.createObjectURL(new Blob([s],{type:"image/svg+xml"}));const i=new Image();i.onload=()=>{URL.revokeObjectURL(u);ok(i);};i.onerror=e=>{URL.revokeObjectURL(u);no(e);};i.src=u;});}
+function svgImg(sc){return new Promise((ok,no)=>{const s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${sc.vb[0]} ${sc.vb[1]}" width="${sc.vb[0]*2}" height="${sc.vb[1]*2}">${GA.svgOf(sc)}</svg>`;const u=URL.createObjectURL(new Blob([s],{type:"image/svg+xml"}));const i=new Image();i.onload=()=>{URL.revokeObjectURL(u);ok(i);};i.onerror=e=>{URL.revokeObjectURL(u);no(e);};i.src=u;});}
 function rr(c,x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 function slab(c,x,y,w,h,r,fill,edge){c.fillStyle="#6b5a8a22";rr(c,x+10,y+22,w,h,r);c.fill();c.fillStyle=edge;rr(c,x,y+12,w,h,r);c.fill();c.fillStyle=fill;rr(c,x,y,w,h,r);c.fill();}
 async function cardBlob(){const d=DAY();if(!d)return null;const W=1080,H=1350,cv=document.createElement("canvas");cv.width=W;cv.height=H;const c=cv.getContext("2d");
